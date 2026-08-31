@@ -13,7 +13,7 @@ from typing import Any
 import yaml
 from pydantic import ValidationError
 
-from app.models import RedFlagRule
+from app.models import EmergencyPattern, RedFlagRule
 
 
 class RuleLoadError(Exception):
@@ -57,3 +57,43 @@ def load_rules_dir(directory: Path) -> list[RedFlagRule]:
             seen.add(rule.id)
             rules.append(rule)
     return rules
+
+
+def parse_patterns(data: Any, origin: str) -> list[EmergencyPattern]:
+    """Parse emergency pre-screen patterns with the same fail-closed rules."""
+    if not isinstance(data, dict) or not isinstance(data.get("patterns"), list):
+        raise RuleLoadError(f"{origin}: expected a top-level mapping with a 'patterns' list")
+
+    patterns: list[EmergencyPattern] = []
+    seen: set[str] = set()
+    for index, entry in enumerate(data["patterns"]):
+        try:
+            pattern = EmergencyPattern.model_validate(entry)
+        except ValidationError as exc:
+            raise RuleLoadError(f"{origin}: pattern #{index} is invalid:\n{exc}") from exc
+        if pattern.id in seen:
+            raise RuleLoadError(f"{origin}: duplicate pattern id {pattern.id!r}")
+        seen.add(pattern.id)
+        patterns.append(pattern)
+    return patterns
+
+
+def load_patterns_file(path: Path) -> list[EmergencyPattern]:
+    try:
+        data = yaml.safe_load(path.read_text(encoding="utf-8"))
+    except (OSError, yaml.YAMLError) as exc:
+        raise RuleLoadError(f"{path.name}: unreadable or invalid YAML: {exc}") from exc
+    return parse_patterns(data, path.name)
+
+
+def load_patterns_dir(directory: Path) -> list[EmergencyPattern]:
+    patterns: list[EmergencyPattern] = []
+    seen: set[str] = set()
+    paths = sorted(directory.glob("*.yaml")) + sorted(directory.glob("*.yml"))
+    for path in paths:
+        for pattern in load_patterns_file(path):
+            if pattern.id in seen:
+                raise RuleLoadError(f"{path.name}: duplicate pattern id {pattern.id!r}")
+            seen.add(pattern.id)
+            patterns.append(pattern)
+    return patterns

@@ -16,13 +16,19 @@ from typing import Any
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy.orm import sessionmaker
 from starlette.datastructures import MutableHeaders
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
-from app.api import health
+from app.api import conversation, health
+from app.conversation.orchestrator import ConversationOrchestrator
 from app.core.config import Settings, load_settings
 from app.core.errors import register_error_handlers
 from app.core.logging import configure_logging, request_id_ctx
+from app.llm.provider import build_provider
+from app.persistence.database import build_engine, init_db
+from app.safety.loader import load_patterns_dir, load_rules_dir
+from app.safety.paths import PRESCREEN_DIR, RULES_DIR
 
 logger = logging.getLogger("sehat.main")
 access_logger = logging.getLogger("sehat.access")
@@ -91,6 +97,19 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     register_error_handlers(app)
     app.include_router(health.router)
+
+    engine = build_engine(settings.sehat_db_path)
+    init_db(engine)
+    session_factory = sessionmaker(bind=engine, expire_on_commit=False, future=True)
+    orchestrator = ConversationOrchestrator(
+        provider=build_provider(settings),
+        session_factory=session_factory,
+        rules=load_rules_dir(RULES_DIR),
+        prescreen_patterns=load_patterns_dir(PRESCREEN_DIR),
+        max_followup_rounds=settings.sehat_max_followup_rounds,
+    )
+    app.state.orchestrator = orchestrator
+    app.include_router(conversation.router)
 
     logger.info(
         "Sehat AI API ready env=%s provider=%s", settings.sehat_env, settings.sehat_llm_provider

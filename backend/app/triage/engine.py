@@ -46,14 +46,14 @@ _RECHECK_ADVICE = LocalizedText(
 )
 
 
-def decide(case: StructuredCase, assessment: SafetyAssessment) -> TriageDecision:
+def decide(case: StructuredCase, assessment: SafetyAssessment, best_effort: bool = False) -> TriageDecision:
     levels = {fired.level for fired in assessment.fired_rules}
 
     if SafetyLevel.EMERGENCY in levels:
         level = TriageLevel.EMERGENCY
     elif SafetyLevel.URGENT in levels:
         level = TriageLevel.URGENT_SAME_DAY
-    elif case.missing_fields:
+    elif case.missing_fields and not best_effort:
         level = TriageLevel.NEEDS_MORE_INFO
     elif SafetyLevel.MONITOR in levels:
         level = TriageLevel.ROUTINE
@@ -68,4 +68,5 @@ def decide(case: StructuredCase, assessment: SafetyAssessment) -> TriageDecision
         recheck_advice=_RECHECK_ADVICE
         if level in (TriageLevel.SELF_CARE, TriageLevel.ROUTINE)
         else None,
+        limited_confidence=best_effort,
     )

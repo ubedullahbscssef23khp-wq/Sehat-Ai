@@ -20,6 +20,7 @@ __all__ = [
     "Condition",
     "DecisionTrace",
     "Demographics",
+    "EmergencyPattern",
     "FiredRule",
     "GuidanceResponse",
     "Language",
@@ -205,6 +206,20 @@ class FiredRule(BaseModel):
     description: str
 
 
+class EmergencyPattern(BaseModel):
+    """A curated emergency pre-screen pattern (ARCHITECTURE.md §6 step 2, §8).
+
+    Matching is deterministic (case-insensitive substring). Content must come
+    from authoritative curation with provenance — never invented.
+    """
+
+    id: str = Field(min_length=1)
+    pattern: str = Field(min_length=1)
+    description: str = Field(min_length=1)
+    source: str = Field(min_length=1)
+    review_date: date
+
+
 class SafetyAssessment(BaseModel):
     fired_rules: list[FiredRule] = Field(default_factory=list)
     highest_level: SafetyLevel = SafetyLevel.NONE
@@ -216,6 +231,7 @@ class TriageDecision(BaseModel):
     next_actions: list[LocalizedText] = Field(min_length=1)
     self_care_limits: list[LocalizedText] = Field(default_factory=list)
     recheck_advice: LocalizedText | None = None
+    limited_confidence: bool = False
 
 
 class Citation(BaseModel):

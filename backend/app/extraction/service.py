@@ -9,16 +9,16 @@ correction hint; a second failure yields the graceful "please rephrase" path.
 from __future__ import annotations
 
 import hashlib
-import json
 import time
 
 from pydantic import BaseModel, ValidationError
 
+from app.llm.jsonutils import parse_json_value
 from app.llm.provider import LLMProvider
 from app.llm.templates import EXTRACTION_TEMPLATE_ID, TemplateRegistry, default_registry
 from app.llm.trace import TraceCollector
 from app.llm.types import LLMRequest
-from app.models import DecisionTrace, StructuredCase
+from app.models import DecisionTrace, Message, StructuredCase
 
 __all__ = ["ExtractionOutcome", "ExtractionService"]
 
@@ -33,23 +33,9 @@ class ExtractionOutcome(BaseModel):
     trace: DecisionTrace
 
 
-def _strip_code_fences(text: str) -> str:
-    stripped = text.strip()
-    if stripped.startswith("```"):
-        lines = stripped.splitlines()
-        lines = lines[1:]
-        if lines and lines[-1].strip() == "```":
-            lines = lines[:-1]
-        stripped = "\n".join(lines).strip()
-    return stripped
-
-
 def _parse_case(raw: str) -> StructuredCase:
     """Parse and validate model output; raises ValueError with a safe summary."""
-    try:
-        payload = json.loads(_strip_code_fences(raw))
-    except json.JSONDecodeError as exc:
-        raise ValueError(f"model output was not valid JSON ({exc.msg})") from exc
+    payload = parse_json_value(raw)
     if not isinstance(payload, dict):
         raise ValueError("model output must be a JSON object")
     try:
@@ -65,7 +51,7 @@ class ExtractionService:
         self._templates = templates if templates is not None else default_registry()
         self._template = self._templates.get(EXTRACTION_TEMPLATE_ID)
 
-    async def extract(self, text: str) -> ExtractionOutcome:
+    async def extract(self, text: str, history: tuple[Message, ...] = ()) -> ExtractionOutcome:
         trimmed = text.strip()
         collector = TraceCollector(
             step=_STEP, input_hash=hashlib.sha256(trimmed.encode("utf-8")).hexdigest()
@@ -76,9 +62,15 @@ class ExtractionService:
                 trace=collector.finalize({"status": "rephrase_needed", "reason": "empty_input"}),
             )
 
+        rendered_history = "\n".join(
+            f"{message.role.value}: {message.text}" for message in history
+        ) or "(no previous conversation)"
+
         feedback = ""
         for _attempt in range(2):
-            messages = self._template.render(user_text=trimmed, feedback=feedback)
+            messages = self._template.render(
+                history=rendered_history, user_text=trimmed, feedback=feedback
+            )
             request = LLMRequest(
                 model=self._provider.model_name, messages=messages, temperature=0.0
             )

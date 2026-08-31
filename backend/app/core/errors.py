@@ -9,6 +9,7 @@ from __future__ import annotations
 import logging
 
 from fastapi import FastAPI, Request
+from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
 logger = logging.getLogger("sehat.errors")
@@ -31,6 +32,27 @@ def register_error_handlers(app: FastAPI) -> None:
         return JSONResponse(
             status_code=exc.status_code,
             content={"error": {"code": exc.code, "message": exc.message}},
+        )
+
+    @app.exception_handler(RequestValidationError)
+    async def handle_validation_error(
+        request: Request, exc: RequestValidationError
+    ) -> JSONResponse:
+        # Only locations and types are surfaced: submitted values may contain
+        # health text and must never be echoed into responses or logs.
+        locations = [list(error["loc"]) for error in exc.errors()]
+        logger.info(
+            "Validation error on %s %s at %s", request.method, request.url.path, locations
+        )
+        return JSONResponse(
+            status_code=422,
+            content={
+                "error": {
+                    "code": "validation_error",
+                    "message": "The request body failed validation.",
+                    "locations": locations,
+                }
+            },
         )
 
     @app.exception_handler(Exception)

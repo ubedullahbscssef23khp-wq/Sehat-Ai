@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+from pathlib import Path
 
 import pytest
 from fastapi.testclient import TestClient
@@ -12,8 +13,13 @@ from app.main import create_app
 
 
 @pytest.fixture()
-def client() -> TestClient:
-    settings = Settings(sehat_env="development", sehat_llm_provider="mock", _env_file=None)
+def client(tmp_path: Path) -> TestClient:
+    settings = Settings(
+        sehat_env="development",
+        sehat_llm_provider="mock",
+        sehat_db_path=tmp_path / "test.sqlite",
+        _env_file=None,
+    )
     app = create_app(settings=settings)
     with TestClient(app) as test_client:
         yield test_client

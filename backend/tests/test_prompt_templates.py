@@ -17,7 +17,7 @@ from app.llm.templates import (
 def test_default_registry_contains_extraction_template() -> None:
     template = default_registry().get(EXTRACTION_TEMPLATE_ID)
     assert template.template_id == EXTRACTION_TEMPLATE_ID
-    assert template.placeholders == ("user_text", "feedback")
+    assert template.placeholders == ("history", "user_text", "feedback")
 
 
 def test_registry_unknown_id_raises() -> None:
@@ -45,7 +45,9 @@ def test_render_requires_all_placeholders() -> None:
 
 def test_render_produces_system_and_user_messages() -> None:
     template = default_registry().get(EXTRACTION_TEMPLATE_ID)
-    messages = template.render(user_text="I have a cough", feedback="")
+    messages = template.render(
+        history="(no previous conversation)", user_text="I have a cough", feedback=""
+    )
     assert messages[0].role == "system"
     assert messages[1].role == "user"
     assert "I have a cough" in messages[1].content
