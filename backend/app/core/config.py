@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from functools import lru_cache
 from pathlib import Path
-from typing import Literal
+from typing import Any, Literal
 
 from pydantic import Field, ValidationError, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -72,7 +72,7 @@ _UNSET: object = object()
 def load_settings(env_file: str | Path | None | object = _UNSET) -> Settings:
     """Load and validate settings, converting validation failures into a
     single clear startup error. Pass env_file=None to skip any .env file."""
-    kwargs: dict = {} if env_file is _UNSET else {"_env_file": env_file}
+    kwargs: dict[str, Any] = {} if env_file is _UNSET else {"_env_file": env_file}
     try:
         return Settings(**kwargs)
     except ValidationError as exc:

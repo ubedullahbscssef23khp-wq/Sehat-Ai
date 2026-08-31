@@ -22,7 +22,7 @@ class RequestIdFilter(logging.Filter):
     """Attaches the current request ID (if any) to every record."""
 
     def filter(self, record: logging.LogRecord) -> bool:
-        record.request_id = request_id_ctx.get()  # type: ignore[attr-defined]
+        record.request_id = request_id_ctx.get()
         return True
 
 

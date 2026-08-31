@@ -12,10 +12,12 @@ from __future__ import annotations
 import logging
 import time
 import uuid
+from typing import Any
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.datastructures import MutableHeaders
+from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
 from app.api import health
 from app.core.config import Settings, load_settings
@@ -31,10 +33,10 @@ class RequestIdMiddleware:
     X-Request-ID response header, makes it available to log records, and
     emits one structured access-log line per request."""
 
-    def __init__(self, app):
+    def __init__(self, app: ASGIApp) -> None:
         self.app = app
 
-    async def __call__(self, scope, receive, send):
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
         if scope["type"] != "http":
             await self.app(scope, receive, send)
             return
@@ -44,7 +46,7 @@ class RequestIdMiddleware:
         status_code: int | str = "-"
         start = time.perf_counter()
 
-        async def send_with_request_id(message):
+        async def send_with_request_id(message: Message) -> None:
             nonlocal status_code
             if message["type"] == "http.response.start":
                 status_code = message.get("status", "-")
@@ -71,7 +73,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     settings = settings or load_settings()
     configure_logging(settings.sehat_log_level)
 
-    docs_config: dict = {}
+    docs_config: dict[str, Any] = {}
     if settings.sehat_env == "production":
         # ARCHITECTURE.md §14: OpenAPI docs disabled in production mode.
         docs_config = {"docs_url": None, "redoc_url": None, "openapi_url": None}
