@@ -1,4 +1,4 @@
-"""Response construction for the conversation API (ARCHITECTURE.md §7).
+"""Response construction for the conversation API (ARCHITECTURE.md §7, §9).
 
 User-facing copy here is product safety framing, not clinical content.
 Disclaimers are server-injected and mandatory: GuidanceResponse validation
@@ -8,6 +8,7 @@ rejects an empty disclaimer list, so no client can strip the boundary.
 from __future__ import annotations
 
 from app.models import (
+    Citation,
     GuidanceResponse,
     LocalizedText,
     SafetyAssessment,
@@ -21,6 +22,14 @@ DISCLAIMER = LocalizedText(
     en=(
         "Sehat AI provides general next-step guidance only. It is not a medical "
         "diagnosis and does not replace a qualified healthcare professional."
+    )
+)
+
+NO_EVIDENCE_NOTE = LocalizedText(
+    en=(
+        "No reliable information is available in the curated knowledge base for "
+        "this topic yet. Please rely on the next-step guidance above and consult "
+        "a healthcare professional for details."
     )
 )
 
@@ -47,17 +56,28 @@ _REPHRASE_MESSAGE = LocalizedText(
 )
 
 
+def fallback_user_message(level: TriageLevel) -> LocalizedText:
+    """Deterministic templated message: the safe fallback whenever a composed
+    message is unavailable or rejected by the output-policy filter."""
+    return _USER_MESSAGES[level]
+
+
 def build_guidance(
     session_id: str,
     decision: TriageDecision,
     follow_up_questions: tuple[LocalizedText, ...] = (),
+    *,
+    user_message: LocalizedText | None = None,
+    evidence: list[Citation] | None = None,
+    evidence_note: LocalizedText | None = None,
 ) -> GuidanceResponse:
     return GuidanceResponse(
         session_id=session_id,
-        user_message=_USER_MESSAGES[decision.level],
+        user_message=user_message if user_message is not None else _USER_MESSAGES[decision.level],
         triage=decision,
         follow_up_questions=list(follow_up_questions),
-        evidence=[],
+        evidence=list(evidence) if evidence is not None else [],
+        evidence_note=evidence_note,
         disclaimers=[DISCLAIMER],
     )
 

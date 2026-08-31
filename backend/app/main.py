@@ -25,6 +25,8 @@ from app.conversation.orchestrator import ConversationOrchestrator
 from app.core.config import Settings, load_settings
 from app.core.errors import register_error_handlers
 from app.core.logging import configure_logging, request_id_ctx
+from app.knowledge.loader import load_entries_dir
+from app.knowledge.paths import CONTENT_DIR
 from app.llm.provider import build_provider
 from app.persistence.database import build_engine, init_db
 from app.safety.loader import load_patterns_dir, load_rules_dir
@@ -107,6 +109,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         rules=load_rules_dir(RULES_DIR),
         prescreen_patterns=load_patterns_dir(PRESCREEN_DIR),
         max_followup_rounds=settings.sehat_max_followup_rounds,
+        knowledge=load_entries_dir(CONTENT_DIR),
     )
     app.state.orchestrator = orchestrator
     app.include_router(conversation.router)

@@ -27,6 +27,7 @@ from app.persistence.repositories import MessageRepository
 from conversation_support import (
     case_json,
     incomplete_case_json,
+    make_knowledge_entry,
     make_pattern,
     make_signal_rule,
     questions_json,
@@ -48,6 +49,7 @@ def inject_orchestrator(
     scripts: tuple[str, ...] = (),
     rules: list | None = None,
     patterns: list | None = None,
+    knowledge: list | None = None,
 ) -> MockProvider:
     """Replace the bare mock orchestrator with one over a scripted provider,
     sharing the same SQLite file (simulates deployment configuration)."""
@@ -62,6 +64,7 @@ def inject_orchestrator(
         rules=rules or [],
         prescreen_patterns=patterns or [],
         max_followup_rounds=settings.sehat_max_followup_rounds,
+        knowledge=knowledge or [],
     )
     return provider
 
@@ -117,11 +120,62 @@ def test_multi_turn_conversation_reaches_triage(app_and_client) -> None:
     assert body["triage"]["limited_confidence"] is False
     assert body["follow_up_questions"] == []
     assert body["disclaimers"], "mandatory disclaimers must be present"
+    # Empty shipped corpus: honest note instead of fabricated evidence.
+    assert body["evidence"] == []
+    assert "No reliable information" in body["evidence_note"]["en"]
     assert client.get(f"/sessions/{session_id}").json()["status"] == "guided"
 
-    # The deterministic pipeline made exactly one extraction call per turn
-    # and one phrasing call; no other LLM traffic occurred.
-    assert len(provider.requests) == 3
+    # The deterministic pipeline made exactly one extraction call per turn,
+    # one phrasing call, and one composition call; no other LLM traffic.
+    assert len(provider.requests) == 4
+
+
+# ---------------------------------------------------------------------------
+# Phase 4 acceptance: citations when knowledge exists; policy filter at API
+# ---------------------------------------------------------------------------
+
+
+def test_api_response_includes_citations_when_knowledge_exists(app_and_client) -> None:
+    app, client, settings = app_and_client
+    entry = make_knowledge_entry("T-KB-1", terms=("synthetic-symptom", "synthetic"))
+    inject_orchestrator(
+        app,
+        settings,
+        scripts=(case_json(), "Thanks for sharing. Please arrange a routine review."),
+        knowledge=[entry],
+    )
+    session_id = create_session(client)
+
+    response = send_message(client, session_id, "synthetic message")
+    assert response.status_code == 200
+    body = response.json()
+    assert len(body["evidence"]) == 1
+    citation = body["evidence"][0]
+    assert citation["source"] == entry.source
+    assert citation["date_reviewed"] == "2026-01-01"
+    assert citation["snippet"] == entry.content
+    assert body["evidence_note"] is None
+    assert body["user_message"]["en"] == "Thanks for sharing. Please arrange a routine review."
+    assert body["disclaimers"], "mandatory disclaimers must be present"
+
+
+def test_api_policy_violating_composition_never_reaches_user(app_and_client) -> None:
+    app, client, settings = app_and_client
+    inject_orchestrator(
+        app,
+        settings,
+        scripts=(case_json(), "You have synthetic fever. Take synthetic pills."),
+    )
+    session_id = create_session(client)
+
+    response = send_message(client, session_id, "synthetic message")
+    assert response.status_code == 200
+    body = response.json()
+    message = body["user_message"]["en"]
+    assert "synthetic fever" not in message
+    assert "synthetic pills" not in message
+    assert message, "templated fallback must still produce a user message"
+    assert body["disclaimers"]
 
 
 # ---------------------------------------------------------------------------

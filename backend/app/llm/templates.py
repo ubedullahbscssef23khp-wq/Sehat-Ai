@@ -16,6 +16,7 @@ from app.llm.types import LLMMessage
 from app.models import StructuredCase
 
 __all__ = [
+    "COMPOSITION_TEMPLATE_ID",
     "EXTRACTION_TEMPLATE_ID",
     "FOLLOWUP_TEMPLATE_ID",
     "PromptTemplate",
@@ -27,6 +28,7 @@ __all__ = [
 
 EXTRACTION_TEMPLATE_ID = "extraction.v2"
 FOLLOWUP_TEMPLATE_ID = "followup.v1"
+COMPOSITION_TEMPLATE_ID = "compose.v1"
 
 
 class TemplateNotFoundError(KeyError):
@@ -138,6 +140,29 @@ Topics:
 Language: {language}"""
 
 
+_COMPOSITION_SYSTEM = """\
+You write the user-facing summary message for a symptom-triage assistant.
+You never diagnose, never name or recommend medications or doses, and never
+contradict the provided guidance. Use ONLY the facts given below: write 2-4
+short, calm, empathetic sentences in plain language. Do not add medical
+claims, causes, or treatments of your own.
+"""
+
+_COMPOSITION_USER = """\
+Write the user-facing message for this guidance.
+
+Triage level: {level}
+Next actions (must be reflected, never contradicted):
+{actions}
+
+Evidence snippets available (do not add information beyond them; may be empty):
+{evidence}
+
+Language: {language}
+
+Return ONLY the message text (no JSON, no markdown, no commentary)."""
+
+
 def default_registry() -> TemplateRegistry:
     registry = TemplateRegistry()
     schema = json.dumps(StructuredCase.model_json_schema(), indent=2)
@@ -155,6 +180,14 @@ def default_registry() -> TemplateRegistry:
             system=_FOLLOWUP_SYSTEM,
             user_template=_FOLLOWUP_USER,
             placeholders=("topics", "language"),
+        )
+    )
+    registry.register(
+        PromptTemplate(
+            template_id=COMPOSITION_TEMPLATE_ID,
+            system=_COMPOSITION_SYSTEM,
+            user_template=_COMPOSITION_USER,
+            placeholders=("level", "actions", "evidence", "language"),
         )
     )
     return registry

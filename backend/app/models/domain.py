@@ -23,6 +23,7 @@ __all__ = [
     "EmergencyPattern",
     "FiredRule",
     "GuidanceResponse",
+    "KnowledgeEntry",
     "Language",
     "LLMCallTrace",
     "LocalizedText",
@@ -240,6 +241,24 @@ class Citation(BaseModel):
     snippet: str = ""
 
 
+class KnowledgeEntry(BaseModel):
+    """A curated knowledge-base entry (ARCHITECTURE.md §9).
+
+    Content must carry provenance — entries without a source and review date
+    are rejected at load time. Nothing here is model-generated.
+    """
+
+    id: str = Field(min_length=1)
+    title: str = Field(min_length=1)
+    terms: list[str] = Field(default_factory=list)
+    content: str = Field(min_length=1)
+    source: str = Field(min_length=1)
+    date_reviewed: date
+
+    def citation(self) -> Citation:
+        return Citation(source=self.source, date_reviewed=self.date_reviewed, snippet=self.content)
+
+
 class Session(BaseModel):
     id: str = Field(min_length=1)
     created_at: datetime
@@ -287,5 +306,6 @@ class GuidanceResponse(BaseModel):
     triage: TriageDecision
     follow_up_questions: list[LocalizedText] = Field(default_factory=list)
     evidence: list[Citation] = Field(default_factory=list)
+    evidence_note: LocalizedText | None = None
     disclaimers: list[LocalizedText] = Field(min_length=1)
     clinician_summary: ClinicianSummary | None = None

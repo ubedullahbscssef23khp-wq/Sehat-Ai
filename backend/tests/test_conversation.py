@@ -190,7 +190,9 @@ def test_safety_flags_take_precedence_over_missing_info(tmp_path: Path) -> None:
     response = asyncio.run(harness.orchestrator.handle_message(session.id, "synthetic message"))
     assert response.triage.level is TriageLevel.URGENT_SAME_DAY
     assert response.follow_up_questions == []
-    assert len(harness.provider.requests) == 1  # no phrasing LLM call happened
+    # Extraction + composition only: no follow-up phrasing call happened.
+    assert len(harness.provider.requests) == 2
+    assert all("Topics:" not in request.messages[-1].content for request in harness.provider.requests)
     assert harness.orchestrator.get_session(session.id).status is SessionStatus.ESCALATED
 
 
@@ -245,7 +247,13 @@ def test_traces_recorded_with_consistent_input_hash(tmp_path: Path) -> None:
     text = "synthetic message"
     asyncio.run(harness.orchestrator.handle_message(session.id, text))
     traces = TraceRepository(harness.session_factory).list_for_session(session.id)
-    assert [trace.step for trace in traces] == ["extraction", "safety", "triage"]
+    assert [trace.step for trace in traces] == [
+        "extraction",
+        "safety",
+        "triage",
+        "knowledge_retrieval",
+        "response_composition",
+    ]
     expected_hash = hashlib.sha256(text.encode("utf-8")).hexdigest()
     assert all(trace.input_hash == expected_hash for trace in traces)
     extraction_trace = traces[0]
@@ -253,6 +261,10 @@ def test_traces_recorded_with_consistent_input_hash(tmp_path: Path) -> None:
     triage_trace = traces[2]
     assert triage_trace.outputs["level"] == "self_care"
     assert triage_trace.outputs["limited_confidence"] is False
+    retrieval_trace = traces[3]
+    assert retrieval_trace.outputs["entry_ids"] == []
+    composition_trace = traces[4]
+    assert composition_trace.outputs["fallback_used"] is True
 
 
 def test_provider_is_swappable_behind_protocol(tmp_path: Path) -> None:

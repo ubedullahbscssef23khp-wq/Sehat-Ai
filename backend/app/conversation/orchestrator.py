@@ -11,16 +11,19 @@ from __future__ import annotations
 
 import hashlib
 import uuid
+from collections.abc import Sequence
 from datetime import datetime, timezone
 
 from sqlalchemy.orm import Session as SASession
 from sqlalchemy.orm import sessionmaker
 
 from app.conversation.completeness import missing_required_fields
+from app.conversation.composition import ResponseComposer
 from app.conversation.errors import SessionClosedError, SessionNotFoundError
 from app.conversation.followups import FollowUpPhraser
-from app.conversation.responses import build_guidance, build_rephrase_guidance
+from app.conversation.responses import NO_EVIDENCE_NOTE, build_guidance, build_rephrase_guidance
 from app.extraction.service import ExtractionService
+from app.knowledge.retrieval import LexicalKnowledgeRetriever
 from app.llm.provider import LLMProvider, LLMUnavailableError
 from app.llm.templates import TemplateRegistry
 from app.llm.trace import TraceCollector
@@ -29,6 +32,7 @@ from app.models import (
     EmergencyPattern,
     FiredRule,
     GuidanceResponse,
+    KnowledgeEntry,
     Language,
     LocalizedText,
     Message,
@@ -73,6 +77,7 @@ class ConversationOrchestrator:
         rules: list[RedFlagRule],
         prescreen_patterns: list[EmergencyPattern],
         max_followup_rounds: int,
+        knowledge: Sequence[KnowledgeEntry] = (),
         templates: TemplateRegistry | None = None,
     ) -> None:
         self._sessions = SessionRepository(session_factory)
@@ -81,6 +86,8 @@ class ConversationOrchestrator:
         self._traces = TraceRepository(session_factory)
         self._extraction = ExtractionService(provider, templates)
         self._phraser = FollowUpPhraser(provider, templates)
+        self._composer = ResponseComposer(provider, templates)
+        self._retriever = LexicalKnowledgeRetriever(knowledge)
         self._rules = rules
         self._patterns = prescreen_patterns
         self._max_followup_rounds = max_followup_rounds
@@ -211,11 +218,50 @@ class ConversationOrchestrator:
             ),
         )
 
-        if not follow_ups:
-            final_status = (
-                SessionStatus.ESCALATED
-                if decision.level in _ESCALATED_LEVELS
-                else SessionStatus.GUIDED
-            )
-            self._sessions.set_status(session_id, final_status)
-        return build_guidance(session_id, decision, follow_ups)
+        if follow_ups:
+            return build_guidance(session_id, decision, follow_ups)
+
+        final_status = (
+            SessionStatus.ESCALATED
+            if decision.level in _ESCALATED_LEVELS
+            else SessionStatus.GUIDED
+        )
+        self._sessions.set_status(session_id, final_status)
+
+        # Step 7: knowledge retrieval — deterministic over curated content;
+        # an empty result is reported honestly, never filled with model memory.
+        retrieved = self._retriever.retrieve(case)
+        evidence = [entry.citation() for entry in retrieved]
+        evidence_note = None if evidence else NO_EVIDENCE_NOTE
+        self._traces.append(
+            session_id,
+            DecisionTrace(
+                step="knowledge_retrieval",
+                timestamp=_now(),
+                input_hash=input_hash,
+                outputs={"entry_ids": [entry.id for entry in retrieved]},
+            ),
+        )
+
+        # Step 8: response composition — LLM phrasing only, constrained to the
+        # triage output and evidence, behind the output-policy filter with a
+        # deterministic templated fallback.
+        collector = TraceCollector(step="response_composition", input_hash=input_hash)
+        composed_text, used_fallback, violations = await self._composer.compose(
+            decision=decision,
+            evidence=evidence,
+            language=session.preferred_language,
+            collector=collector,
+        )
+        self._traces.append(
+            session_id,
+            collector.finalize({"fallback_used": used_fallback, "violations": violations}),
+        )
+
+        return build_guidance(
+            session_id,
+            decision,
+            user_message=LocalizedText(en=composed_text),
+            evidence=evidence,
+            evidence_note=evidence_note,
+        )

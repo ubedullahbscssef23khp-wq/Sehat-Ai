@@ -17,7 +17,7 @@ from sqlalchemy.orm import sessionmaker
 from app.conversation.orchestrator import ConversationOrchestrator
 from app.llm.mock import MockProvider
 from app.llm.provider import LLMProvider
-from app.models import Condition, EmergencyPattern, RedFlagRule, SafetyLevel
+from app.models import Condition, EmergencyPattern, KnowledgeEntry, RedFlagRule, SafetyLevel
 from app.persistence.database import build_engine, init_db
 
 SYNTHETIC_SOURCE = "synthetic test fixture (not medical content)"
@@ -93,6 +93,20 @@ def make_signal_rule(rule_id: str, signal: str, level: SafetyLevel) -> RedFlagRu
     )
 
 
+def make_knowledge_entry(
+    entry_id: str = "T-KB-1",
+    terms: tuple[str, ...] = ("synthetic-symptom",),
+) -> KnowledgeEntry:
+    return KnowledgeEntry(
+        id=entry_id,
+        title=f"Synthetic topic {entry_id}",
+        terms=list(terms),
+        content=f"Synthetic curated content for {entry_id}.",
+        source=SYNTHETIC_SOURCE,
+        date_reviewed=date(2026, 1, 1),
+    )
+
+
 class OrchestratorHarness:
     """Orchestrator over a file-backed SQLite DB plus repository access."""
 
@@ -103,6 +117,7 @@ class OrchestratorHarness:
         provider: LLMProvider | None = None,
         rules: list[RedFlagRule] | None = None,
         patterns: list[EmergencyPattern] | None = None,
+        knowledge: list[KnowledgeEntry] | None = None,
         max_followup_rounds: int = 2,
     ) -> None:
         self.provider: LLMProvider
@@ -121,5 +136,6 @@ class OrchestratorHarness:
             rules=rules or [],
             prescreen_patterns=patterns or [],
             max_followup_rounds=max_followup_rounds,
+            knowledge=knowledge or [],
         )
         self.db_path = tmp_path / "test.sqlite"

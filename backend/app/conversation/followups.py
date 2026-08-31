@@ -10,6 +10,7 @@ from __future__ import annotations
 import time
 from collections.abc import Sequence
 
+from app.conversation.output_policy import find_violations
 from app.llm.jsonutils import parse_json_value
 from app.llm.provider import LLMProvider, LLMUnavailableError
 from app.llm.templates import FOLLOWUP_TEMPLATE_ID, TemplateRegistry, default_registry
@@ -86,6 +87,17 @@ class FollowUpPhraser:
         latency_ms = int((time.perf_counter() - started) * 1000)
         questions = _parse_questions(response.text, expected=len(fields))
         if questions is None:
+            collector.record(
+                model=response.model,
+                template_id=self._template.template_id,
+                latency_ms=latency_ms,
+                valid=False,
+            )
+            return _fallback_questions(fields), True
+        violations = [
+            violation for question in questions for violation in find_violations(question)
+        ]
+        if violations:
             collector.record(
                 model=response.model,
                 template_id=self._template.template_id,
