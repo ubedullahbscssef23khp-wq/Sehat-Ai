@@ -22,7 +22,15 @@ DISCLAIMER = LocalizedText(
     en=(
         "Sehat AI provides general next-step guidance only. It is not a medical "
         "diagnosis and does not replace a qualified healthcare professional."
-    )
+    ),
+    ur=(
+        "صحت اے آئی صرف اگلے قدم کی عمومی رہنمائی فراہم کرتا ہے۔ یہ طبی تشخیص "
+        "نہیں ہے اور کسی مستند طبی پیشہ ور کا متبادل نہیں۔"
+    ),
+    sd=(
+        "صحت اي آءِ صرف ايندڙ قدم جي عام رهنمائي مهيا ڪري ٿو. هي طبي تشخيص "
+        "ناهي ۽ ڪنهن مستند طبي ماهر جو متبادل ناهي."
+    ),
 )
 
 NO_EVIDENCE_NOTE = LocalizedText(
@@ -30,29 +38,51 @@ NO_EVIDENCE_NOTE = LocalizedText(
         "No reliable information is available in the curated knowledge base for "
         "this topic yet. Please rely on the next-step guidance above and consult "
         "a healthcare professional for details."
-    )
+    ),
+    ur=(
+        "اس موضوع کے لیے ابھی مرتب کردہ معلوماتی ذخیرے میں قابل اعتماد معلومات "
+        "موجود نہیں۔ اوپر دی گئی اگلے قدم کی رہنمائی پر عمل کریں اور مزید تفصیل "
+        "کے لیے کسی طبی پیشہ ور سے مشورہ کریں۔"
+    ),
+    sd=(
+        "هن موضوع لاءِ هن وقت مرتب ڪيل معلوماتي ذخيري ۾ قابل اعتماد معلومات "
+        "موجود ناهي. مٿي ڏنل ايندڙ قدم جي رهنمائي تي ڀروسو ڪريو ۽ وڌيڪ تفصيل "
+        "لاءِ ڪنهن طبي ماهر سان صلاح ڪريو."
+    ),
 )
 
 _USER_MESSAGES: dict[TriageLevel, LocalizedText] = {
     TriageLevel.EMERGENCY: LocalizedText(
-        en="This may be an emergency. Please follow the emergency actions below now."
+        en="This may be an emergency. Please follow the emergency actions below now.",
+        ur="یہ ہنگامی صورتحال ہو سکتی ہے۔ براہ کرم ابھی نیچے دیے گئے ہنگامی اقدامات کریں۔",
+        sd="هي ايمرجنسي واري صورتحال ٿي سگهي ٿي. مهرباني ڪري هاڻي هيٺ ڏنل ايمرجنسي وارا قدم کڻو.",
     ),
     TriageLevel.URGENT_SAME_DAY: LocalizedText(
-        en="These symptoms should be assessed in person by a healthcare professional today."
+        en="These symptoms should be assessed in person by a healthcare professional today.",
+        ur="ان علامات کا آج ہی کسی طبی پیشہ ور سے بالمشافہ جائزہ کروانا چاہیے۔",
+        sd="انهن علامتن جو اڄ ئي ڪنهن طبي ماهر کان روبرو جائزو وٺڻ گهرجي.",
     ),
     TriageLevel.ROUTINE: LocalizedText(
-        en="These symptoms should be reviewed by a healthcare professional; this does not look urgent."
+        en="These symptoms should be reviewed by a healthcare professional; this does not look urgent.",
+        ur="ان علامات کا کسی طبی پیشہ ور سے جائزہ کروائیں؛ یہ فوری نوعیت کی نہیں لگتیں۔",
+        sd="انهن علامتن جو ڪنهن طبي ماهر کان جائزو وٺرايو؛ هي فوري نوعيت جون نٿيون لڳن.",
     ),
     TriageLevel.SELF_CARE: LocalizedText(
-        en="Based on what you described, self-care at home is reasonable for now."
+        en="Based on what you described, self-care at home is reasonable for now.",
+        ur="آپ کی بیان کردہ معلومات کی بنیاد پر فی الحال گھر پر اپنی دیکھ بھال مناسب ہے۔",
+        sd="توهان جي ٻڌايل ڳالهين جي بنياد تي هن وقت گهر ۾ پنهنجي سنڀال مناسب آهي.",
     ),
     TriageLevel.NEEDS_MORE_INFO: LocalizedText(
-        en="Please answer the follow-up questions so the guidance can be completed."
+        en="Please answer the follow-up questions so the guidance can be completed.",
+        ur="براہ کرم مزید سوالات کے جواب دیں تاکہ رہنمائی مکمل کی جا سکے۔",
+        sd="مهرباني ڪري وڌيڪ سوالن جا جواب ڏيو ته جيئن رهنمائي مڪمل ٿي سگهي.",
     ),
 }
 
 _REPHRASE_MESSAGE = LocalizedText(
-    en="I could not fully understand that message. Please describe the symptoms again in your own words."
+    en="I could not fully understand that message. Please describe the symptoms again in your own words.",
+    ur="میں اس پیغام کو پوری طرح نہیں سمجھ سکا۔ براہ کرم اپنی علامات اپنے الفاظ میں دوبارہ بیان کریں۔",
+    sd="مان ان پيغام کي مڪمل طور سمجهي نه سگهيس. مهرباني ڪري پنهنجون علامتون پنهنجن لفظن ۾ ٻيهر بيان ڪريو.",
 )
 
 

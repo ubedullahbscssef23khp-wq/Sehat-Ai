@@ -20,9 +20,9 @@ from app.core.config import Settings
 from app.conversation.orchestrator import ConversationOrchestrator
 from app.llm.mock import MockProvider
 from app.main import create_app
-from app.models import SafetyLevel
+from app.models import SafetyLevel, SessionStatus
 from app.persistence.database import build_engine
-from app.persistence.repositories import MessageRepository
+from app.persistence.repositories import MessageRepository, SessionRepository
 
 from conversation_support import (
     case_json,
@@ -254,6 +254,61 @@ def test_deterministic_rule_escalation_via_api(app_and_client) -> None:
     assert client.get(f"/sessions/{session_id}").json()["status"] == "escalated"
 
 
+@pytest.mark.parametrize("language", ["ur", "sd"])
+def test_localized_api_guidance_keeps_safety_copy(app_and_client, language: str) -> None:
+    app, client, settings = app_and_client
+    inject_orchestrator(app, settings, scripts=(case_json(),))
+    session = client.post("/sessions", json={"preferred_language": language}).json()
+
+    response = send_message(client, session["id"], "synthetic message")
+
+    assert response.status_code == 200
+    body = response.json()
+    expected = "\u06d2" if language == "ur" else "\u067b"
+    localized_values = [
+        body["user_message"][language],
+        body["triage"]["next_actions"][0][language],
+        body["evidence_note"][language],
+        body["disclaimers"][0][language],
+    ]
+    combined = " ".join(localized_values)
+    assert expected in combined
+    assert not any(
+        marker in combined for marker in ("Ã", "â", "ð", "╪", "┘")
+    )
+    assert body["evidence_note"] is not None
+
+
+def test_empty_emergency_corpus_does_not_claim_emergency_detection(app_and_client) -> None:
+    app, client, settings = app_and_client
+    provider = inject_orchestrator(app, settings, scripts=(case_json(),))
+    session_id = create_session(client)
+
+    response = send_message(client, session_id, "synthetic emergency phrase")
+
+    assert response.status_code == 200
+    assert response.json()["triage"]["level"] == "self_care"
+    assert response.json()["triage"]["fired_rule_ids"] == []
+    assert len(provider.requests) == 2
+
+
+def test_llm_failure_still_persists_user_message(app_and_client) -> None:
+    app, client, settings = app_and_client
+    inject_orchestrator(app, settings)
+    session_id = create_session(client)
+
+    response = send_message(client, session_id, "private synthetic health text")
+
+    assert response.status_code == 503
+    engine = build_engine(settings.sehat_db_path)
+    factory: sessionmaker[SASession] = sessionmaker(
+        bind=engine, expire_on_commit=False, future=True
+    )
+    messages = MessageRepository(factory).list_for_session(session_id)
+    assert [message.text for message in messages] == ["private synthetic health text"]
+    assert client.get(f"/sessions/{session_id}").json()["status"] == "collecting"
+
+
 # ---------------------------------------------------------------------------
 # Acceptance (c): session state survives a server restart (SQLite-backed)
 # ---------------------------------------------------------------------------
@@ -290,6 +345,32 @@ def test_session_state_survives_server_restart(tmp_path: Path) -> None:
 
         # Unknown sessions still 404 after restart.
         assert second.get("/sessions/does-not-exist").status_code == 404
+
+
+def test_closed_session_remains_closed_after_server_restart(tmp_path: Path) -> None:
+    db_path = tmp_path / "closed-restart.sqlite"
+    settings = make_settings(db_path)
+
+    first_app = create_app(settings=settings)
+    with TestClient(first_app) as first:
+        session_id = create_session(first)
+        engine = build_engine(db_path)
+        factory: sessionmaker[SASession] = sessionmaker(
+            bind=engine, expire_on_commit=False, future=True
+        )
+        SessionRepository(factory).set_status(session_id, SessionStatus.CLOSED)
+
+    second_app = create_app(settings=settings)
+    with TestClient(second_app) as second:
+        provider = inject_orchestrator(second_app, settings)
+        reloaded = second.get(f"/sessions/{session_id}")
+        assert reloaded.status_code == 200
+        assert reloaded.json()["status"] == "closed"
+
+        response = send_message(second, session_id, "synthetic message")
+        assert response.status_code == 409
+        assert response.json()["error"]["code"] == "session_closed"
+        assert provider.requests == []
 
 
 # ---------------------------------------------------------------------------

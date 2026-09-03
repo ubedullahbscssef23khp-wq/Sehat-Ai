@@ -261,7 +261,7 @@ class ConversationOrchestrator:
         return build_guidance(
             session_id,
             decision,
-            user_message=LocalizedText(en=composed_text),
+            user_message=None if used_fallback else LocalizedText(en=composed_text),
             evidence=evidence,
             evidence_note=evidence_note,
         )

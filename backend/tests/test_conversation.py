@@ -267,6 +267,18 @@ def test_traces_recorded_with_consistent_input_hash(tmp_path: Path) -> None:
     assert composition_trace.outputs["fallback_used"] is True
 
 
+def test_decision_traces_do_not_store_raw_user_text(tmp_path: Path) -> None:
+    raw_text = "private synthetic health text"
+    harness = OrchestratorHarness(tmp_path, scripts=(case_json(),))
+    session = harness.orchestrator.create_session()
+    asyncio.run(harness.orchestrator.handle_message(session.id, raw_text))
+
+    traces = TraceRepository(harness.session_factory).list_for_session(session.id)
+    serialized = json.dumps([trace.model_dump(mode="json") for trace in traces])
+    assert raw_text not in serialized
+    assert hashlib.sha256(raw_text.encode("utf-8")).hexdigest() in serialized
+
+
 def test_provider_is_swappable_behind_protocol(tmp_path: Path) -> None:
     """Any object satisfying the LLMProvider protocol can drive the flow."""
 

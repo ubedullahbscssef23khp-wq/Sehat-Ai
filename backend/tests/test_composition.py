@@ -13,6 +13,7 @@ from pydantic import ValidationError
 from app.conversation.composition import MAX_COMPOSED_CHARS, ResponseComposer
 from app.conversation.followups import FollowUpPhraser
 from app.conversation.responses import fallback_user_message
+from app.conversation.responses import DISCLAIMER, NO_EVIDENCE_NOTE
 from app.knowledge.paths import CONTENT_DIR
 from app.knowledge.retrieval import LexicalKnowledgeRetriever
 from app.llm.mock import MockProvider
@@ -218,6 +219,14 @@ def test_every_api_like_response_carries_disclaimers(tmp_path: Path) -> None:
     response = asyncio.run(harness.orchestrator.handle_message(session.id, "synthetic message"))
     assert len(response.disclaimers) >= 1
     assert "not" in response.disclaimers[0].en
+
+
+@pytest.mark.parametrize("language, expected", [(Language.UR, "\u06d2"), (Language.SD, "\u067a")])
+def test_deterministic_localized_copy_is_real_unicode(language: Language, expected: str) -> None:
+    texts = [DISCLAIMER, NO_EVIDENCE_NOTE, fallback_user_message(TriageLevel.EMERGENCY)]
+    localized = " ".join(text.for_language(language) for text in texts)
+    assert expected in localized
+    assert not any(marker in localized for marker in ("Ã", "â", "ð", "╪", "┘"))
 
 
 def test_retriever_rejects_nothing_but_returns_deterministically() -> None:

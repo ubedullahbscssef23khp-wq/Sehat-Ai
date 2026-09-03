@@ -51,6 +51,19 @@ def test_medication_advice_is_blocked(text: str) -> None:
     assert is_compliant(text) is False
 
 
+@pytest.mark.parametrize(
+    "text",
+    [
+        "آپ کو بخار ہے۔",
+        "توهان کي بيماري آهي.",
+        "یہ دوا لیں۔",
+        "هي دوا استعمال ڪريو.",
+    ],
+)
+def test_non_english_diagnostic_and_medication_claims_are_blocked(text: str) -> None:
+    assert is_compliant(text) is False
+
+
 def test_dosage_units_are_blocked_even_without_directives() -> None:
     assert "medication_dosage_units" in find_violations("The usual amount is 500mg.")
 

@@ -24,6 +24,9 @@ POLICY_PATTERNS: tuple[tuple[str, re.Pattern[str]], ...] = (
     ("diagnostic_suffering_from", re.compile(r"\bsuffer(?:s|ing)?\s+from\b", re.IGNORECASE)),
     ("diagnostic_diagnosis_word", re.compile(r"\bdiagnos(?:is|es|ed|e)\b", re.IGNORECASE)),
     ("diagnostic_condition_claim", re.compile(r"\byour\s+condition\b", re.IGNORECASE)),
+    # Conservative phrase guards only; these are not complete language classifiers.
+    ("diagnostic_urdu_claim", re.compile(r"(?:آپ\s+کو|آپ\s+میں\s+مبتلا|تشخیص)", re.IGNORECASE)),
+    ("diagnostic_sindhi_claim", re.compile(r"(?:توهان\s+کي|توهان\s+۾\s+مبتلا|تشخيص)", re.IGNORECASE)),
     # Medication advice (directives, drug names, dosages).
     ("medication_action_take", re.compile(
         r"\b(?:take|takes|taking|use|using|start|started|stop|stopping|give|giving)\b"
@@ -41,6 +44,8 @@ POLICY_PATTERNS: tuple[tuple[str, re.Pattern[str]], ...] = (
         re.IGNORECASE,
     )),
     ("medication_dosage_units", re.compile(r"\b\d+\s*(?:mg|milligrams?|ml)\b", re.IGNORECASE)),
+    ("medication_urdu_terms", re.compile(r"(?:دوا|گولی|گولیاں|ادویات).*(?:لیں|استعمال)", re.IGNORECASE)),
+    ("medication_sindhi_terms", re.compile(r"(?:دوا|گوري|گوليون|دوائون).*(?:وٺو|استعمال ڪريو)", re.IGNORECASE)),
 )
 
 
