@@ -1,71 +1,126 @@
-import { useEffect, useState } from "react";
-import { fetchHealth, type HealthStatus } from "./api/health";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { fetchHealth } from "./api/health";
+import { ChatThread } from "./components/ChatThread";
+import { Composer } from "./components/Composer";
+import { ErrorBanner } from "./components/ErrorBanner";
+import { Hero } from "./components/Hero";
+import { LanguagePicker } from "./components/LanguagePicker";
+import { PlusIcon, PulseIcon } from "./components/Icons";
+import { directionOf, strings } from "./i18n/strings";
+import { useChat } from "./state/useChat";
 
-type ConnectionState =
-  | { kind: "loading" }
-  | { kind: "online"; health: HealthStatus }
-  | { kind: "offline"; error: string };
+type BackendStatus = "checking" | "online" | "offline";
 
 export default function App() {
-  const [connection, setConnection] = useState<ConnectionState>({ kind: "loading" });
+  const chat = useChat();
+  const t = strings(chat.language);
+  const dir = directionOf(chat.language);
 
-  useEffect(() => {
-    let cancelled = false;
+  const [draft, setDraft] = useState("");
+  const [backendStatus, setBackendStatus] = useState<BackendStatus>("checking");
+  const composerRef = useRef<HTMLTextAreaElement>(null);
+
+  const checkBackend = useCallback(() => {
+    setBackendStatus("checking");
     fetchHealth()
-      .then((health) => {
-        if (!cancelled) setConnection({ kind: "online", health });
-      })
-      .catch((error: unknown) => {
-        if (!cancelled) {
-          setConnection({
-            kind: "offline",
-            error: error instanceof Error ? error.message : String(error),
-          });
-        }
-      });
-    return () => {
-      cancelled = true;
-    };
+      .then(() => setBackendStatus("online"))
+      .catch(() => setBackendStatus("offline"));
   }, []);
 
+  useEffect(() => {
+    checkBackend();
+  }, [checkBackend]);
+
+  const handleSend = useCallback(
+    (text: string) => {
+      chat.send(text);
+      setDraft("");
+    },
+    [chat],
+  );
+
+  const handleStarter = useCallback((text: string) => {
+    setDraft(text);
+    composerRef.current?.focus();
+  }, []);
+
+  const handleNewConversation = useCallback(() => {
+    chat.reset();
+    setDraft("");
+    composerRef.current?.focus();
+  }, [chat]);
+
+  const showOfflineBanner = backendStatus === "offline" && !chat.error;
+
   return (
-    <main className="shell">
-      <h1>Sehat AI</h1>
-      <p className="tagline">
-        AI-assisted health guidance and symptom triage · English · اردو · سنڌي
-      </p>
+    <div className="app" lang={chat.language} dir={dir}>
+      <header className="topbar">
+        <div className="wordmark">
+          <span className="wordmark__icon" aria-hidden="true">
+            <PulseIcon size={20} />
+          </span>
+          <span className="wordmark__name">{t.appName}</span>
+        </div>
 
-      <section className="status-card" aria-live="polite">
-        {connection.kind === "loading" && <p className="muted">Connecting to backend…</p>}
-        {connection.kind === "online" && (
-          <>
-            <p className="ok">Backend online</p>
-            <dl className="kv">
-              <dt>Service</dt>
-              <dd>{connection.health.service}</dd>
-              <dt>Environment</dt>
-              <dd>{connection.health.env}</dd>
-              <dt>LLM provider</dt>
-              <dd>{connection.health.llm_provider}</dd>
-            </dl>
-          </>
-        )}
-        {connection.kind === "offline" && (
-          <>
-            <p className="error">Backend unreachable</p>
-            <p className="muted">
-              Start the backend (from <code>backend/</code>:{" "}
-              <code>python -m uvicorn app.main:create_app --factory</code>) and reload.
-            </p>
-            <p className="muted small">{connection.error}</p>
-          </>
-        )}
-      </section>
+        <div className="topbar__controls">
+          {chat.started && (
+            <button
+              type="button"
+              className="ghost-button"
+              onClick={handleNewConversation}
+              disabled={chat.busy}
+            >
+              <PlusIcon size={15} />
+              <span>{t.newConversation}</span>
+            </button>
+          )}
+          <LanguagePicker language={chat.language} onChange={chat.setLanguage} disabled={chat.busy} />
+        </div>
+      </header>
 
-      <footer className="disclaimer">
-        Sehat AI provides general guidance only. It does not diagnose conditions and does
-        not replace a qualified healthcare professional.
-      </footer>
-    </main>
+      <main className="stage">
+        <div className="stage__inner">
+          {chat.started ? (
+            <ChatThread turns={chat.turns} busy={chat.busy} language={chat.language} />
+          ) : (
+            <Hero language={chat.language} onStarter={handleStarter} />
+          )}
+        </div>
+      </main>
+
+      <div className="dock">
+        <div className="dock__inner">
+          {chat.error && (
+            <ErrorBanner
+              error={chat.error}
+              language={chat.language}
+              onRetry={chat.retry}
+              onNewConversation={handleNewConversation}
+            />
+          )}
+          {showOfflineBanner && (
+            <div className="error-banner" role="alert">
+              <p className="error-banner__text">
+                <span>{t.errorOffline}</span>
+              </p>
+              <button type="button" className="error-banner__action" onClick={checkBackend}>
+                <span>{t.retry}</span>
+              </button>
+            </div>
+          )}
+
+          <Composer
+            ref={composerRef}
+            language={chat.language}
+            value={draft}
+            disabled={chat.busy}
+            onChange={setDraft}
+            onSubmit={handleSend}
+          />
+
+          <p className="footnote">{t.disclaimerText}</p>
+        </div>
+      </div>
+    </div>
   );
 }
