@@ -54,6 +54,42 @@ export interface GuidanceResponse {
   evidence: Citation[];
   evidence_note: LocalizedText | null;
   disclaimers: LocalizedText[];
+  clinician_summary: ClinicianSummary | null;
+}
+
+export interface StructuredCase {
+  chief_complaint: string;
+  symptoms: Array<{
+    name: string;
+    body_system: string;
+    severity: number | null;
+    progression: string;
+    duration: string | null;
+  }>;
+  demographics: {
+    age_group: string | null;
+    pregnant: boolean | null;
+  };
+  associated_factors: string[];
+  red_flag_signals: string[];
+  missing_fields: string[];
+  confidence: number;
+  raw_excerpt: string;
+}
+
+export interface FiredRule {
+  rule_id: string;
+  level: string;
+  description: string;
+}
+
+export interface ClinicianSummary {
+  structured_case: StructuredCase;
+  fired_rules: FiredRule[];
+  triage_decision: TriageDecision;
+  timeline: string[];
+  generated_at: string;
+  model_attribution: string | null;
 }
 
 export interface ErrorEnvelope {
