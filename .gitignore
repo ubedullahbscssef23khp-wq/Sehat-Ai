@@ -37,3 +37,7 @@ logs/
 *.swp
 .DS_Store
 Thumbs.db
+
+session-id.txt
+
+session-id.txt

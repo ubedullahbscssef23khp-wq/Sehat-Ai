@@ -9,6 +9,7 @@ from __future__ import annotations
 
 from app.models import (
     Citation,
+    ClinicianSummary,
     GuidanceResponse,
     LocalizedText,
     SafetyAssessment,
@@ -100,6 +101,7 @@ def build_guidance(
     user_message: LocalizedText | None = None,
     evidence: list[Citation] | None = None,
     evidence_note: LocalizedText | None = None,
+    clinician_summary: ClinicianSummary | None = None,
 ) -> GuidanceResponse:
     return GuidanceResponse(
         session_id=session_id,
@@ -109,6 +111,7 @@ def build_guidance(
         evidence=list(evidence) if evidence is not None else [],
         evidence_note=evidence_note,
         disclaimers=[DISCLAIMER],
+        clinician_summary=clinician_summary,
     )
 
 

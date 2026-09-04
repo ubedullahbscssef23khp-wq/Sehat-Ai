@@ -22,6 +22,7 @@ from app.conversation.composition import ResponseComposer
 from app.conversation.errors import SessionClosedError, SessionNotFoundError
 from app.conversation.followups import FollowUpPhraser
 from app.conversation.responses import NO_EVIDENCE_NOTE, build_guidance, build_rephrase_guidance
+from app.conversation.summary import build_clinician_summary
 from app.extraction.service import ExtractionService
 from app.knowledge.retrieval import LexicalKnowledgeRetriever
 from app.llm.provider import LLMProvider, LLMUnavailableError
@@ -258,10 +259,21 @@ class ConversationOrchestrator:
             collector.finalize({"fallback_used": used_fallback, "violations": violations}),
         )
 
+        # Phase 9: Build clinician-ready summary from validated state.
+        all_messages = self._messages.list_for_session(session_id)
+        clinician_summary = build_clinician_summary(
+            case=case,
+            fired_rules=assessment.fired_rules,
+            triage_decision=decision,
+            messages=all_messages,
+            model_attribution=None,  # Model attribution will be added if provider info becomes available.
+        )
+
         return build_guidance(
             session_id,
             decision,
             user_message=None if used_fallback else LocalizedText(en=composed_text),
             evidence=evidence,
             evidence_note=evidence_note,
+            clinician_summary=clinician_summary,
         )
