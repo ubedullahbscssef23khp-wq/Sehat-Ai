@@ -17,5 +17,6 @@ def evaluate_prescreen(patterns: list[EmergencyPattern], text: str) -> list[Emer
 
     Matches keep pattern order for stable, explainable results.
     """
-    folded = text.casefold()
-    return [pattern for pattern in patterns if pattern.pattern.casefold() in folded]
+    import unicodedata
+    folded = unicodedata.normalize("NFC", text).casefold()
+    return [pattern for pattern in patterns if unicodedata.normalize("NFC", pattern.pattern).casefold() in folded]

@@ -1,10 +1,11 @@
+from __future__ import annotations
+from unittest.mock import patch
 """Conversation orchestration tests (Phase 3).
 
 Fixtures are synthetic and structural; they exercise the state machine and
 safety invariants, not medical content.
 """
 
-from __future__ import annotations
 
 import asyncio
 import hashlib
@@ -180,11 +181,12 @@ def test_model_claimed_missing_fields_are_replaced_by_deterministic_check(tmp_pa
     assert harness.orchestrator.get_session(session.id).status is SessionStatus.GUIDED
 
 
+@patch('app.safety.signals._ALLOWED_SIGNALS', {'TEST_SIGNAL_ALPHA'})
 def test_safety_flags_take_precedence_over_missing_info(tmp_path: Path) -> None:
     """An urgent rule must never be delayed by follow-up questions."""
-    rule = make_signal_rule("T-RULE-1", "synthetic_flag", SafetyLevel.URGENT)
+    rule = make_signal_rule("T-RULE-1", "TEST_SIGNAL_ALPHA", SafetyLevel.URGENT)
     payload_dict = json.loads(incomplete_case_json())
-    payload_dict["red_flag_signals"] = ["synthetic_flag"]
+    payload_dict["red_flag_signals"] = ["TEST_SIGNAL_ALPHA"]
     harness = OrchestratorHarness(tmp_path, scripts=(json.dumps(payload_dict),), rules=[rule])
     session = harness.orchestrator.create_session()
     response = asyncio.run(harness.orchestrator.handle_message(session.id, "synthetic message"))

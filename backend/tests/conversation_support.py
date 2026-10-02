@@ -8,6 +8,7 @@ content.
 from __future__ import annotations
 
 import json
+import hashlib
 from datetime import date
 from pathlib import Path
 
@@ -17,7 +18,7 @@ from sqlalchemy.orm import sessionmaker
 from app.conversation.orchestrator import ConversationOrchestrator
 from app.llm.mock import MockProvider
 from app.llm.provider import LLMProvider
-from app.models import Condition, EmergencyPattern, KnowledgeEntry, RedFlagRule, SafetyLevel
+from app.models import Condition, EmergencyPattern, KnowledgeEntry, RedFlagRule, SafetyLevel, ReviewStatus
 from app.persistence.database import build_engine, init_db
 
 SYNTHETIC_SOURCE = "synthetic test fixture (not medical content)"
@@ -79,6 +80,7 @@ def make_pattern(pattern_id: str = "T-PRESCREEN-1", text: str = "synthetic-chest
         description=f"synthetic prescreen pattern {pattern_id}",
         source=SYNTHETIC_SOURCE,
         review_date=date(2026, 1, 1),
+        review_status=ReviewStatus.APPROVED,
     )
 
 
@@ -97,13 +99,32 @@ def make_knowledge_entry(
     entry_id: str = "T-KB-1",
     terms: tuple[str, ...] = ("synthetic-symptom",),
 ) -> KnowledgeEntry:
+    content = f"Synthetic curated content for {entry_id}."
+    payload = {
+        "approval_metadata": {},
+        "clinical_scope": "general",
+        "content": content,
+        "date_reviewed": "2026-01-01",
+        "id": entry_id,
+        "language": "en",
+        "publication_date": None,
+        "reviewer_role": "QUALIFIED_CLINICAL_REVIEWER",
+        "source": SYNTHETIC_SOURCE,
+        "source_url": None,
+        "terms": list(terms),
+        "title": f"Synthetic topic {entry_id}",
+        "version": "1.0",
+    }
+    canonical = json.dumps(payload, separators=(",", ":"), sort_keys=True)
     return KnowledgeEntry(
         id=entry_id,
         title=f"Synthetic topic {entry_id}",
         terms=list(terms),
-        content=f"Synthetic curated content for {entry_id}.",
+        content=content,
         source=SYNTHETIC_SOURCE,
         date_reviewed=date(2026, 1, 1),
+        review_status=ReviewStatus.APPROVED,
+        content_hash=hashlib.sha256(canonical.encode("utf-8")).hexdigest(),
     )
 
 

@@ -1,0 +1,79 @@
+import os
+
+tokens_content = """/* Design tokens — the single visual source of truth */
+:root {
+  color-scheme: dark;
+
+  /* Brand + neutral surfaces */
+  --bg: #091325;
+  --bg-darker: #050a14;
+  --bg-accent: radial-gradient(circle at 50% -10%, rgba(20, 184, 166, 0.15) 0%, transparent 60%);
+  --surface: #101c33;
+  --surface-soft: #162644;
+  --surface-hover: #1b2f53;
+  --surface-light: #ffffff;
+  
+  --border: #1e3150;
+  --border-strong: #2a4165;
+
+  /* Text */
+  --text: #e2e8f0;
+  --text-strong: #f8fafc;
+  --text-muted: #94a3b8;
+  --text-faint: #64748b;
+  --text-inverse: #0f172a;
+  --text-inverse-muted: #475569;
+  
+  --on-accent: #ffffff;
+
+  /* Brand accent (calm healthcare teal) */
+  --accent: #14b8a6;
+  --accent-strong: #0f766e;
+  --accent-soft: rgba(20, 184, 166, 0.15);
+  --accent-ring: rgba(20, 184, 166, 0.3);
+
+  /* Triage accents — semantic colors */
+  --tri-emergency: #f87171;
+  --tri-emergency-soft: rgba(248, 113, 113, 0.15);
+  --tri-urgent: #fb923c;
+  --tri-urgent-soft: rgba(251, 146, 60, 0.15);
+  --tri-routine: #60a5fa;
+  --tri-routine-soft: rgba(96, 165, 250, 0.15);
+  --tri-selfcare: #34d399;
+  --tri-selfcare-soft: rgba(52, 211, 153, 0.15);
+  --tri-info: #94a3b8;
+  --tri-info-soft: rgba(148, 163, 184, 0.15);
+
+  /* Feedback */
+  --error: #f87171;
+  --danger: #ef4444;
+  --error-soft: rgba(248, 113, 113, 0.15);
+
+  /* Radii */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --radius-pill: 999px;
+
+  /* Shadows */
+  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.2);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 16px 32px rgba(0, 0, 0, 0.4);
+
+  /* Layout */
+  --content-width: 52rem;
+  --topbar-height: 72px;
+
+  /* Motion */
+  --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --dur-fast: 150ms;
+  --dur: 250ms;
+  --dur-slow: 400ms;
+}
+"""
+
+with open('frontend/src/styles/tokens.css', 'w', encoding='utf-8') as f:
+    f.write(tokens_content)
+
+print("Updated tokens")

@@ -25,7 +25,7 @@ from typing import Any
 import yaml
 from pydantic import ValidationError
 
-from app.models import KnowledgeEntry
+from app.models import KnowledgeEntry, ReviewStatus
 
 __all__ = [
     "KnowledgeLoadError",
@@ -80,6 +80,8 @@ def load_entry_file(path: Path) -> KnowledgeEntry:
 
 
 def load_entries_dir(directory: Path) -> list[KnowledgeEntry]:
+    if not directory.is_dir():
+        raise KnowledgeLoadError(f"Directory not found: {directory}")
     entries: list[KnowledgeEntry] = []
     seen: set[str] = set()
     for path in sorted(directory.glob("*.md")):
@@ -89,5 +91,6 @@ def load_entries_dir(directory: Path) -> list[KnowledgeEntry]:
         if entry.id in seen:
             raise KnowledgeLoadError(f"{path.name}: duplicate entry id {entry.id!r}")
         seen.add(entry.id)
-        entries.append(entry)
+        if entry.review_status == ReviewStatus.APPROVED:
+            entries.append(entry)
     return entries

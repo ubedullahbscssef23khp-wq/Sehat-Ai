@@ -1,0 +1,21 @@
+{
+  "name": "sehat-ai",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "bash scripts/start-dev.sh",
+    "build": "npm --prefix frontend run build && rm -rf dist && cp -r frontend/dist dist",
+    "lint": "npm --prefix frontend exec -- tsc -p frontend/tsconfig.json --noEmit",
+    "test": "npm --prefix frontend test"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.3.3",
+    "concurrently": "^8.2.2",
+    "jsdom": "^30.0.1",
+    "tailwindcss": "^4.3.3"
+  },
+  "workspaces": [
+    "frontend"
+  ]
+}

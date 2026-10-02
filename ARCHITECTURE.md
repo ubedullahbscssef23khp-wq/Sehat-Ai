@@ -259,6 +259,20 @@ now, and every rule carries `source` and `review_date`.
 - Every retrieved snippet returned to the user carries `source` + `date_reviewed`.
 - If retrieval finds nothing, the response says so — never fill with model memory.
 
+### 9.1 Clinical Content Governance Workflow
+To safely introduce authoritative clinical content (Knowledge and Emergency Patterns):
+1. Developers may create `DRAFT` content.
+2. Content moves to `PENDING_DOMAIN_REVIEW` when ready for evaluation.
+3. Qualified human clinical review is required before `APPROVED`.
+4. `APPROVED` is the only production-active state (unapproved content is strictly inactive).
+5. `REJECTED` content is inactive.
+6. `ReviewStatus` is workflow metadata, not proof of authorization by itself.
+7. Production medical content must come from authoritative sources.
+8. Clinical content must never be invented by the LLM.
+9. Emergency patterns require the same qualified clinical review boundary.
+10. Clinical source/version/date must remain traceable.
+11. Production activation should occur through controlled versioned repository changes.
+
 ## 10. LLM integration
 
 ```python
@@ -313,3 +327,19 @@ case (everything down) still yields correct emergency guidance.
 - All user text length-limited and treated as untrusted; no shell/eval of content.
 - CORS locked to the frontend origin; OpenAPI docs disabled in production mode.
 - Dependency surface kept minimal to keep the attack/audit surface small.
+
+## §13. CLINICAL CONTENT ACTIVATION WORKFLOW
+
+To guarantee medical safety and strictly separate engineering validation from clinical governance, the following workflow governs all medical knowledge and emergency patterns:
+
+1. **Source validation is not clinical approval.** A developer ensuring the URL or markdown format is correct does not constitute medical verification.
+2. **Structural corpus validation is not clinical approval.** The `validate_corpus.py` script ensures schema correctness and hashes are valid; it does *not* endorse the medical safety of the content.
+3. **DRAFT means not ready.** Content is actively being authored or formatted and is ignored by production loaders.
+4. **PENDING_DOMAIN_REVIEW means awaiting qualified human review.** The content is structurally complete but must remain inactive in production until a qualified medical professional reviews it.
+5. **APPROVED means eligible for controlled production activation.** Only this status permits the content to be loaded into the production retrieval engine or safety prescreen engine.
+6. **REJECTED means inactive.** The content was reviewed and failed clinical safety standards.
+7. **Emergency rules require the same clinical review gate.** Red-flag signals and Emergency Patterns must pass the exact same governance workflow as medical knowledge.
+8. **Test-only approved fixtures are never production clinical content.** Synthetically approved models used in automated tests (such as pytest) prove the engineering pathways; they must never be deployed to the production content directories.
+9. **No LLM may approve clinical content.** The language model is completely excluded from the clinical approval workflow and cannot modify the `ReviewStatus` or bypass the loader.
+10. **No developer should self-certify medical safety merely because tests pass.** A passing test suite proves the software works, not that the medical advice is sound.
+11. **Production approval must be traceable to a qualified human clinical review process.** If supported by the repository configuration, `reviewed_by`, `reviewed_at`, and `review_notes` must record the actual human who authorized the content.

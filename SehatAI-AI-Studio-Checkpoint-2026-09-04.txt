@@ -1,0 +1,108 @@
+================================================================================
+SEHAT AI — WORKSPACE CHECKPOINT REPORT (END-OF-DAY)
+Date: 2026-09-04
+================================================================================
+
+1. PROJECT / WORKSPACE IDENTIFICATION
+--------------------------------------
+- App Name: Sehat AI
+- Workspace Root: /app/applet
+- Description: AI-assisted health guidance and symptom triage with clinician summary
+- Target Platforms / Runtimes:
+    * Backend: Python 3.10 / FastAPI / Pydantic v2
+    * Frontend: React 18 / TypeScript / Vite / Vitest / jsdom
+
+2. GIT / VERSION CONTROL STATUS
+--------------------------------
+- Git Repository in Sandbox: No local .git directory initialized in container sandbox.
+- Current Git Branch: Not applicable (unversioned sandbox workspace).
+- Current HEAD Commit: Not applicable.
+
+3. EXACT LIST OF MODIFIED FILES (TODAY'S WORK)
+-----------------------------------------------
+1. frontend/package.json
+   - Added vitest and React Testing Library devDependencies (`vitest`, `@testing-library/react`, `@testing-library/jest-dom`, `@testing-library/user-event`, `jsdom`).
+   - Added `"test": "vitest run"` script.
+   - Zero production runtime dependencies modified or added.
+2. frontend/vite.config.ts
+   - Configured Vitest runner with `jsdom` environment and setup files while preserving all Vite build, server, and API proxy settings.
+
+4. EXACT LIST OF NEWLY CREATED / UNTRACKED FILES (TODAY'S WORK)
+----------------------------------------------------------------
+1. frontend/src/test/setup.ts
+   - Global test setup for `@testing-library/jest-dom/vitest` and jsdom `scrollIntoView` stub.
+2. frontend/src/__tests__/fixtures.ts
+   - Purely synthetic, non-clinical test fixture generators strictly typed to API schemas.
+3. frontend/src/__tests__/localization.test.ts
+   - 5 unit tests for English, Urdu, Sindhi, and fallback resolution.
+4. frontend/src/__tests__/TriageCard.test.tsx
+   - 7 unit tests for all 5 triage levels, elevated emergency styling, and Urdu rendering.
+5. frontend/src/__tests__/DisclaimerBlock.test.tsx
+   - 4 unit tests verifying mandatory disclaimers are rendered verbatim in DOM without omission.
+6. frontend/src/__tests__/ClinicianSummaryView.test.tsx
+   - 11 unit tests verifying clinician summary: chief complaint, symptoms, severity/duration/progression tags, demographics, red flags, fired rule descriptions (internal rule IDs shielded), timeline, details/summary collapsible structure, and Urdu/Sindhi localization.
+7. frontend/src/__tests__/AssistantMessage.test.tsx
+   - 7 unit tests verifying composition of patient guidance, triage decision cards, disclaimers, clinician summary presence/absence, evidence, and follow-ups.
+8. frontend/src/__tests__/Composer.test.tsx
+   - 7 unit tests verifying user input typing, submit callbacks, disabled states for empty/whitespace/loading, and Enter/Shift+Enter key handling.
+9. frontend/src/__tests__/EvidenceList.test.tsx
+   - 4 unit tests verifying citation rendering (source, date, snippet), empty list handling, and honest fallback guidance notes.
+10. frontend/src/__tests__/FollowUpList.test.tsx
+    - 4 unit tests verifying clarifying questions, ordered list rendering, and Urdu localization.
+11. frontend/src/__tests__/ErrorBanner.test.tsx
+    - 4 unit tests verifying offline/server error alerts, localized messages, retry button invocation, and new conversation restarts.
+12. frontend/src/__tests__/App.test.tsx
+    - 4 integration tests using mocked API boundaries verifying initial landing/hero state, response display, error state handling, and conversation reset.
+13. SehatAI-AI-Studio-Checkpoint-2026-09-04.zip
+    - Full project backup ZIP archive containing all 119 source, test, config, and doc files.
+14. SehatAI-AI-Studio-Checkpoint-2026-09-04.txt
+    - This comprehensive checkpoint report.
+
+5. SUMMARY OF SEHAT AI WORK COMPLETED TODAY
+--------------------------------------------
+- Task 2 (Safety Architecture & Audit Verification):
+    * Verified 100% test integrity across the entire backend safety engine, rule escalation logic, pre-screen emergency classifiers, LLM extraction & prompt boundaries, and API schemas.
+    * Verified strict static type safety with zero errors under `mypy --strict app` across all 45 backend source files.
+- Task 3A (Frontend Test Foundation):
+    * Installed Vitest and Testing Library devDependencies without touching production runtime dependencies.
+    * Configured Vite/Vitest for jsdom test execution.
+    * Built synthetic, non-clinical test fixture generators adhering strictly to API contracts.
+    * Implemented initial 16 automated tests covering localization, triage cards, and disclaimer blocks.
+- Task 3B (Frontend Automated Coverage Expansion):
+    * Expanded the frontend automated test suite from 16 tests to 57 tests across 10 test files.
+    * Achieved complete coverage for ClinicianSummaryView, AssistantMessage, Composer, EvidenceList, FollowUpList, ErrorBanner, and App integration without modifying any existing production component code.
+
+6. CURRENT TEST & VERIFICATION RESULTS
+---------------------------------------
+- Frontend Test Suite: 57 PASSED (10 test files, 0 failures, 0 skipped).
+- Backend Test Suite: 252 PASSED (pytest-9.1.1, 45 test modules, 0 failures).
+- Backend Static Type Check: PASSED (`Success: no issues found in 45 source files` with `mypy --strict app`).
+- Frontend Production Build: PASSED (`tsc --noEmit && vite build` completed successfully, producing clean production bundle in dist/).
+- Diff & Formatting Hygiene: PASSED (Zero trailing whitespace, clean UNIX LF line endings).
+
+7. INCOMPLETE WORK
+-------------------
+- No tasks from today are incomplete. Tasks 2, 3A, and 3B are 100% complete and verified green.
+- Planned future work remains in DEVELOPMENT_PLAN.md for subsequent phases.
+
+8. EXACT INSTRUCTIONS FOR RESUMING TOMORROW
+--------------------------------------------
+1. Verify Environment:
+   - Backend: Run `PYTHONPATH=backend pytest backend/tests` to confirm 252 tests pass.
+   - Mypy: Run `cd backend && mypy --strict app` to confirm 0 type issues.
+   - Frontend: Run `npm --prefix frontend test` to confirm all 57 tests pass.
+   - Build: Run `npm --prefix frontend run build` to confirm production build succeeds.
+2. Next Steps:
+   - Consult `DEVELOPMENT_PLAN.md` to select the next approved task or phase.
+   - Always run the test verification suite before starting new changes.
+
+9. CRITICAL WARNING ON REPOSITORY PRESERVATION
+-----------------------------------------------
+*** EXPLICIT WARNING ***
+DO NOT USE THE AI STUDIO "SYNC TO GITHUB" BUTTON OR RUN AUTOMATED MIGRATIONS!
+The canonical repository is a Python/FastAPI backend with a React frontend.
+Using automated migration or automated GitHub sync will risk overwriting the canonical
+repository with an auto-generated or migrated Node/Express project, which would destroy
+the authoritative Python safety engine, deterministic rule evaluation, and medical logic.
+Always preserve the canonical Python architecture and maintain manual version control.
+================================================================================

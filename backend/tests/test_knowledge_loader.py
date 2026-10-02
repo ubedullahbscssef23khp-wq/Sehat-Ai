@@ -25,6 +25,12 @@ title: Synthetic topic
 terms: [synthetic-symptom, synthetic topic]
 source: synthetic authoritative source
 date_reviewed: 2026-01-15
+review_status: approved
+content_hash: 'b589657e716e84cf63ff72826479ec8d9b6feb6f7966b8d766f285c5782b8ba2'
+language: en
+reviewer_role: QUALIFIED_CLINICAL_REVIEWER
+version: "1.0"
+clinical_scope: general
 ---
 Synthetic curated body content.
 """
@@ -85,7 +91,7 @@ def test_invalid_yaml_frontmatter_rejected(tmp_path: Path) -> None:
 
 
 def test_empty_body_rejected(tmp_path: Path) -> None:
-    text = VALID_FRONTMATTER.replace("Synthetic curated body content.\n", "\n")
+    text = VALID_FRONTMATTER.replace("Synthetic curated body content.", "")
     with pytest.raises(KnowledgeLoadError, match="body"):
         load_entry_file(write_entry(tmp_path, "empty-body.md", text))
 
@@ -103,7 +109,11 @@ def test_load_dir_rejects_duplicate_ids(tmp_path: Path) -> None:
 
 
 def test_load_dir_keeps_sorted_order(tmp_path: Path) -> None:
-    write_entry(tmp_path, "b.md", VALID_FRONTMATTER.replace("t-kb-1", "t-kb-2"))
+    fm2 = VALID_FRONTMATTER.replace("id: t-kb-1", "id: t-kb-2")
+    # Also need to replace the hash since id changed
+    import re
+    fm2 = re.sub(r"content_hash: '.*'", "content_hash: 'af3257f4357d528dceb1d29451ffab5d989bfc8141cbf626564287b7bfd22df8'", fm2)
+    write_entry(tmp_path, "b.md", fm2)
     write_entry(tmp_path, "a.md", VALID_FRONTMATTER)
     entries = load_entries_dir(tmp_path)
     assert [entry.id for entry in entries] == ["t-kb-1", "t-kb-2"]

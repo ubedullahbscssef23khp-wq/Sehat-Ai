@@ -16,11 +16,14 @@ from typing import Any
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
+import os
 from sqlalchemy.orm import sessionmaker
 from starlette.datastructures import MutableHeaders
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
-from app.api import conversation, health
+from app.api import conversation, health, v1
 from app.conversation.orchestrator import ConversationOrchestrator
 from app.core.config import Settings, load_settings
 from app.core.errors import register_error_handlers
@@ -77,6 +80,40 @@ class RequestIdMiddleware:
             request_id_ctx.reset(token)
 
 
+class SecurityHeadersMiddleware:
+    def __init__(self, app: ASGIApp) -> None:
+        self.app = app
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
+
+        async def send_with_headers(message: Message) -> None:
+            if message["type"] == "http.response.start":
+                headers = MutableHeaders(scope=message)
+                headers.append("X-Content-Type-Options", "nosniff")
+                headers.append("X-Frame-Options", "DENY")
+                headers.append("Referrer-Policy", "strict-origin-when-cross-origin")
+                headers.append("Permissions-Policy", "camera=(), geolocation=(), microphone=(self), payment=()")
+                headers.append("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
+                headers.append(
+                    "Content-Security-Policy",
+                    "default-src 'self'; "
+                    "script-src 'self'; "
+                    "style-src 'self' 'unsafe-inline'; "
+                    "img-src 'self' data:; "
+                    "font-src 'self' data:; "
+                    "connect-src 'self' https://generativelanguage.googleapis.com; "
+                    "object-src 'none'; "
+                    "base-uri 'self'; "
+                    "frame-ancestors 'none';"
+                )
+            await send(message)
+
+        await self.app(scope, receive, send_with_headers)
+
+
 def create_app(settings: Settings | None = None) -> FastAPI:
     settings = settings or load_settings()
     configure_logging(settings.sehat_log_level)
@@ -96,6 +133,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         allow_headers=["*"],
     )
     app.add_middleware(RequestIdMiddleware)
+    app.add_middleware(SecurityHeadersMiddleware)
 
     register_error_handlers(app)
     app.include_router(health.router)
@@ -113,6 +151,28 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     )
     app.state.orchestrator = orchestrator
     app.include_router(conversation.router)
+    app.include_router(v1.router)
+
+    # Production Static Asset Serving
+    dist_path = os.path.join(os.path.dirname(__file__), "..", "..", "dist")
+    if os.path.isdir(dist_path):
+        class ImmutableStaticFiles(StaticFiles):
+            async def get_response(self, path: str, scope: Scope):
+                response = await super().get_response(path, scope)
+                response.headers["Cache-Control"] = "public, max-age=31536000, immutable"
+                return response
+
+        app.mount("/assets", ImmutableStaticFiles(directory=os.path.join(dist_path, "assets")), name="assets")
+        
+        @app.get("/{catchall:path}", include_in_schema=False)
+        def serve_spa(catchall: str):
+            # Exclude /api routes from being caught
+            if catchall.startswith("api/") or catchall.startswith("v1/"):
+                return {"detail": "Not Found"}
+            return FileResponse(
+                os.path.join(dist_path, "index.html"),
+                headers={"Cache-Control": "no-cache, must-revalidate"}
+            )
 
     logger.info(
         "Sehat AI API ready env=%s provider=%s", settings.sehat_env, settings.sehat_llm_provider

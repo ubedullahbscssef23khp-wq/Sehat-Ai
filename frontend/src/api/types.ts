@@ -106,3 +106,20 @@ export function localized(text: LocalizedText, language: Language): string {
   if (language === "sd" && text.sd !== null) return text.sd;
   return text.en;
 }
+
+export type MessageRole = "user" | "assistant" | "system";
+
+export interface Message {
+  id: string;
+  session_id: string;
+  role: MessageRole;
+  text: string;
+  lang: Language;
+  created_at: string;
+}
+
+export interface SessionHistory {
+  session: Session;
+  messages: Message[];
+  responses: GuidanceResponse[];
+}

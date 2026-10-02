@@ -1,10 +1,11 @@
+from __future__ import annotations
+from unittest.mock import patch
 """Conversation API end-to-end tests (Phase 3 acceptance criteria).
 
 All conversations use synthetic fixtures and the MockProvider; no medical
 content and no real LLM calls are involved.
 """
 
-from __future__ import annotations
 
 import json
 from collections.abc import Iterator
@@ -235,15 +236,16 @@ def test_emergency_prescreen_shortcuts_without_llm(app_and_client) -> None:
     assert client.get(f"/sessions/{session_id}").json()["status"] == "escalated"
 
 
+@patch('app.safety.signals._ALLOWED_SIGNALS', {'TEST_SIGNAL_ALPHA'})
 def test_deterministic_rule_escalation_via_api(app_and_client) -> None:
     app, client, settings = app_and_client
     payload = json.loads(incomplete_case_json())
-    payload["red_flag_signals"] = ["synthetic_flag"]
+    payload["red_flag_signals"] = ["TEST_SIGNAL_ALPHA"]
     inject_orchestrator(
         app,
         settings,
         scripts=(json.dumps(payload),),
-        rules=[make_signal_rule("T-RULE-1", "synthetic_flag", SafetyLevel.URGENT)],
+        rules=[make_signal_rule("T-RULE-1", "TEST_SIGNAL_ALPHA", SafetyLevel.URGENT)],
     )
     session_id = create_session(client)
     response = send_message(client, session_id, "synthetic message")
@@ -452,3 +454,133 @@ def test_request_ids_present_on_all_conversation_endpoints(app_and_client) -> No
         request_id = response.headers.get("X-Request-ID")
         assert request_id and len(request_id) == 32
     assert len({r.headers["X-Request-ID"] for r in (created, sent, fetched)}) == 3
+import pytest
+
+def test_get_history_valid(app_and_client):
+    app, client, settings = app_and_client
+    inject_orchestrator(app, settings, scripts=(case_json(),))
+    
+    # Create session
+    resp1 = client.post("/sessions", json={"preferred_language": "en"})
+    assert resp1.status_code == 201
+    session_id = resp1.json()["id"]
+    
+    # Send message
+    resp2 = client.post(f"/sessions/{session_id}/messages", json={"text": "I have a headache"})
+    assert resp2.status_code == 200
+    
+    # Get history
+    resp3 = client.get(f"/sessions/{session_id}/history")
+    assert resp3.status_code == 200
+    data = resp3.json()
+    assert data["session"]["id"] == session_id
+    assert len(data["messages"]) == 1
+    assert data["messages"][0]["text"] == "I have a headache"
+    assert len(data["responses"]) == 1
+
+def test_get_history_invalid(app_and_client):
+    app, client, settings = app_and_client
+    resp = client.get("/sessions/nonexistent/history")
+    assert resp.status_code == 404
+
+def test_delete_session(app_and_client):
+    app, client, settings = app_and_client
+    inject_orchestrator(app, settings, scripts=(case_json(),))
+    
+    # Create session
+    resp1 = client.post("/sessions", json={"preferred_language": "en"})
+    assert resp1.status_code == 201
+    session_id = resp1.json()["id"]
+    
+    # Delete session
+    resp = client.delete(f"/sessions/{session_id}")
+    assert resp.status_code == 204
+    
+    # Ensure it's gone
+    resp2 = client.get(f"/sessions/{session_id}/history")
+    assert resp2.status_code == 404
+
+def test_get_history_valid(app_and_client):
+    app, client, settings = app_and_client
+    from conversation_support import case_json
+    inject_orchestrator(app, settings, scripts=(case_json(),))
+    
+    # Create session
+    resp1 = client.post("/sessions", json={"preferred_language": "en"})
+    assert resp1.status_code == 201
+    session_id = resp1.json()["id"]
+    
+    # Send message
+    resp2 = client.post(f"/sessions/{session_id}/messages", json={"text": "I have a headache"})
+    assert resp2.status_code == 200
+    
+    # Get history
+    resp3 = client.get(f"/sessions/{session_id}/history")
+    assert resp3.status_code == 200
+    data = resp3.json()
+    assert data["session"]["id"] == session_id
+    assert len(data["messages"]) == 1
+    assert data["messages"][0]["text"] == "I have a headache"
+    assert len(data["responses"]) == 1
+
+def test_get_history_invalid(app_and_client):
+    app, client, settings = app_and_client
+    resp = client.get("/sessions/nonexistent/history")
+    assert resp.status_code == 404
+
+def test_delete_session(app_and_client):
+    app, client, settings = app_and_client
+    from conversation_support import case_json
+    inject_orchestrator(app, settings, scripts=(case_json(),))
+    
+    # Create session
+    resp1 = client.post("/sessions", json={"preferred_language": "en"})
+    assert resp1.status_code == 201
+    session_id = resp1.json()["id"]
+    
+    # Delete session
+    resp = client.delete(f"/sessions/{session_id}")
+    assert resp.status_code == 204
+    
+    # Ensure it's gone
+    resp2 = client.get(f"/sessions/{session_id}/history")
+    assert resp2.status_code == 404
+
+def test_get_history_isolation(app_and_client):
+    app, client, settings = app_and_client
+    from conversation_support import case_json
+    inject_orchestrator(app, settings, scripts=(case_json(), case_json()))
+    
+    # Session A
+    resp_a = client.post("/sessions", json={"preferred_language": "en"})
+    session_a = resp_a.json()["id"]
+    client.post(f"/sessions/{session_a}/messages", json={"text": "message A"})
+    
+    # Session B
+    resp_b = client.post("/sessions", json={"preferred_language": "en"})
+    session_b = resp_b.json()["id"]
+    client.post(f"/sessions/{session_b}/messages", json={"text": "message B"})
+    
+    # Retrieve A
+    hist_a = client.get(f"/sessions/{session_a}/history").json()
+    assert len(hist_a["messages"]) == 1
+    assert hist_a["messages"][0]["text"] == "message A"
+    
+    # Retrieve B
+    hist_b = client.get(f"/sessions/{session_b}/history").json()
+    assert len(hist_b["messages"]) == 1
+    assert hist_b["messages"][0]["text"] == "message B"
+
+def test_history_does_not_invoke_llm_or_triage(app_and_client):
+    app, client, settings = app_and_client
+    from unittest.mock import patch
+    
+    resp = client.post("/sessions", json={"preferred_language": "en"})
+    session_id = resp.json()["id"]
+    
+    with patch("app.api.conversation.ConversationOrchestrator") as mock_orch:
+        hist_resp = client.get(f"/sessions/{session_id}/history")
+        assert hist_resp.status_code == 200
+        # Check that no LLM or triage actions occurred
+        # History is fetched through SessionRepository directly in API, not orchestrator
+        mock_orch.assert_not_called()

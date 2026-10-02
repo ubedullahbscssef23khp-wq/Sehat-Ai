@@ -8,6 +8,8 @@ from __future__ import annotations
 
 from datetime import date, datetime
 from enum import Enum
+import hashlib
+import json
 from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
@@ -31,10 +33,12 @@ __all__ = [
     "MessageRole",
     "Progression",
     "RedFlagRule",
+    "ReviewStatus",
     "SafetyAssessment",
     "SafetyLevel",
     "Session",
     "SessionStatus",
+    "SessionHistory",
     "StructuredCase",
     "SymptomReport",
     "TriageDecision",
@@ -84,6 +88,13 @@ class SafetyLevel(str, Enum):
     MONITOR = "monitor"
     URGENT = "urgent"
     EMERGENCY = "emergency"
+
+
+class ReviewStatus(str, Enum):
+    DRAFT = "draft"
+    PENDING_DOMAIN_REVIEW = "pending_domain_review"
+    APPROVED = "approved"
+    REJECTED = "rejected"
 
 
 class TriageLevel(str, Enum):
@@ -219,6 +230,11 @@ class EmergencyPattern(BaseModel):
     description: str = Field(min_length=1)
     source: str = Field(min_length=1)
     review_date: date
+    review_status: ReviewStatus
+
+    reviewed_by: str | None = None
+    reviewed_at: datetime | None = None
+    review_notes: str | None = None
 
 
 class SafetyAssessment(BaseModel):
@@ -254,6 +270,44 @@ class KnowledgeEntry(BaseModel):
     content: str = Field(min_length=1)
     source: str = Field(min_length=1)
     date_reviewed: date
+    review_status: ReviewStatus
+    content_hash: str = Field(min_length=1)
+    
+    # Phase 15A Knowledge Governance Fields
+    language: Language = Field(default=Language.EN)
+    source_url: str | None = None
+    publication_date: date | None = None
+    reviewer_role: str = Field(default="QUALIFIED_CLINICAL_REVIEWER", min_length=1)
+    version: str = Field(default="1.0", min_length=1)
+    clinical_scope: str = Field(default="general", min_length=1)
+    approval_metadata: dict[str, Any] = Field(default_factory=dict)
+
+    reviewed_by: str | None = None
+    reviewed_at: datetime | None = None
+    review_notes: str | None = None
+
+    @model_validator(mode="after")
+    def _verify_content_hash(self) -> "KnowledgeEntry":
+        payload = {
+            "approval_metadata": self.approval_metadata,
+            "clinical_scope": self.clinical_scope,
+            "content": self.content,
+            "date_reviewed": self.date_reviewed.isoformat(),
+            "id": self.id,
+            "language": self.language.value,
+            "publication_date": self.publication_date.isoformat() if self.publication_date else None,
+            "reviewer_role": self.reviewer_role,
+            "source": self.source,
+            "source_url": self.source_url,
+            "terms": self.terms,
+            "title": self.title,
+            "version": self.version,
+        }
+        canonical = json.dumps(payload, separators=(",", ":"), sort_keys=True)
+        computed = hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+        if self.content_hash != computed:
+            raise ValueError(f"content hash mismatch: expected {self.content_hash}, got {computed}")
+        return self
 
     def citation(self) -> Citation:
         return Citation(source=self.source, date_reviewed=self.date_reviewed, snippet=self.content)
@@ -309,3 +363,9 @@ class GuidanceResponse(BaseModel):
     evidence_note: LocalizedText | None = None
     disclaimers: list[LocalizedText] = Field(min_length=1)
     clinician_summary: ClinicianSummary | None = None
+
+
+class SessionHistory(BaseModel):
+    session: Session
+    messages: list[Message]
+    responses: list[GuidanceResponse]

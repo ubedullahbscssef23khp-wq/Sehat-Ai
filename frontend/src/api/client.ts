@@ -4,7 +4,7 @@
  * stays server-side (ARCHITECTURE.md §5). No health text is ever logged.
  */
 
-import type { ErrorEnvelope, GuidanceResponse, Language, Session } from "./types";
+import type { ErrorEnvelope, GuidanceResponse, Language, Session, SessionHistory } from "./types";
 
 const BASE = "/api";
 
@@ -72,4 +72,39 @@ export function sendMessage(session_id: string, text: string): Promise<GuidanceR
     method: "POST",
     body: JSON.stringify({ text }),
   });
+}
+
+export function getSessionHistory(session_id: string): Promise<SessionHistory> {
+  return request<SessionHistory>(`/sessions/${encodeURIComponent(session_id)}/history`);
+}
+
+export function deleteSession(session_id: string): Promise<void> {
+  // Return void by casting. Since 204 No Content is empty, parse it as text then cast.
+  return fetch(`${BASE}/sessions/${encodeURIComponent(session_id)}`, { method: "DELETE" }).then(res => {
+    if (!res.ok) throw new ApiError(res.status, "generic", "Failed to delete");
+  });
+}
+
+// V1 API bindings
+export interface SessionListItem {
+  id: string;
+  created_at: string;
+  updated_at: string;
+  preview: string;
+  status: string;
+}
+
+export function v1SendMessage(text: string, session_id?: string, language: Language = "en"): Promise<GuidanceResponse> {
+  return request<GuidanceResponse>(`${BASE}/v1/conversation/message`, {
+    method: "POST",
+    body: JSON.stringify({ session_id, text, language }),
+  });
+}
+
+export function v1GetClinicalSummary(session_id: string): Promise<any> {
+  return request<any>(`${BASE}/v1/clinical/summary/${encodeURIComponent(session_id)}`);
+}
+
+export function v1GetHistorySessions(): Promise<SessionListItem[]> {
+  return request<SessionListItem[]>(`${BASE}/v1/history/sessions`);
 }

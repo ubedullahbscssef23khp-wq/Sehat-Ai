@@ -1,0 +1,6 @@
+{
+  "name": "Sehat AI",
+  "description": "AI-assisted health guidance and symptom triage with clinician summary",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from typing import cast
 
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, Request, Response, status
 from pydantic import BaseModel, Field
 
 from app.conversation.errors import SessionNotFoundError
@@ -16,7 +16,7 @@ from app.conversation.orchestrator import ConversationOrchestrator
 from app.core.config import Settings
 from app.core.errors import SehatError
 from app.llm.provider import LLMUnavailableError
-from app.models import GuidanceResponse, Language, Session
+from app.models import GuidanceResponse, Language, Session, SessionHistory
 
 router = APIRouter(prefix="/sessions", tags=["conversation"])
 
@@ -73,6 +73,20 @@ def get_session(session_id: str, request: Request) -> Session:
     if session is None:
         raise SessionNotFoundError(session_id)
     return session
+
+
+@router.get("/{session_id}/history")
+def get_history(session_id: str, request: Request) -> SessionHistory:
+    history = _orchestrator(request).get_history(session_id)
+    if history is None:
+        raise SessionNotFoundError(session_id)
+    return history
+
+
+@router.delete("/{session_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_session(session_id: str, request: Request) -> Response:
+    _orchestrator(request).delete_session(session_id)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.post("/{session_id}/messages")

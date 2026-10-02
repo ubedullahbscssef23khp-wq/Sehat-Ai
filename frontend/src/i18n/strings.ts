@@ -1,208 +1,297 @@
-/** UI chrome strings for en / ur / sd.
- *
- * These are interface labels only. All medical guidance, triage wording,
- * follow-up questions, evidence, and disclaimers come from the backend and are
- * rendered verbatim — the frontend never generates or translates medical copy.
- * Starter prompts are benign UI examples, not diagnoses.
- */
-
 import type { Language, TriageLevel } from "../api/types";
 
-export const LANGUAGES: readonly { code: Language; label: string; dir: "ltr" | "rtl" }[] = [
-  { code: "en", label: "English", dir: "ltr" },
-  { code: "ur", label: "اردو", dir: "rtl" },
-  { code: "sd", label: "سنڌي", dir: "rtl" },
-];
+export const LANGUAGES = [
+  { code: "en", label: "English" },
+  { code: "ur", label: "اردو" },
+  { code: "sd", label: "سنڌي" },
+] as const;
 
-export function directionOf(language: Language): "ltr" | "rtl" {
-  return language === "en" ? "ltr" : "rtl";
-}
-
-export interface StringTable {
-  appName: string;
-  tagline: string;
-  heroTitle: string;
-  heroSubtitle: string;
-  starterHeading: string;
-  inputPlaceholder: string;
-  send: string;
-  newConversation: string;
-  languageLabel: string;
-  thinking: string;
-  assistantName: string;
-  followUpHeading: string;
-  evidenceHeading: string;
-  reviewedOn: string;
-  disclaimerHeading: string;
-  limitedConfidence: string;
-  errorOffline: string;
-  errorServer: string;
-  errorValidation: string;
-  errorTooLong: string;
-  errorClosed: string;
-  errorNotFound: string;
-  errorUnavailable: string;
-  errorGeneric: string;
-  retry: string;
-  sessionEnded: string;
-  youLabel: string;
-  disclaimerText: string;
-  triageLabels: Record<TriageLevel, string>;
-}
-
-const en: StringTable = {
-  appName: "Sehat AI",
-  tagline: "AI-assisted health guidance and symptom triage",
-  heroTitle: "Understand your symptoms. Get guided next steps.",
-  heroSubtitle:
-    "Describe how you feel in your own words. Sehat AI asks focused questions and suggests the right next step — it does not diagnose and never replaces a healthcare professional.",
-  starterHeading: "You could start with",
-  inputPlaceholder: "Describe your symptoms…",
-  send: "Send",
-  newConversation: "New conversation",
-  languageLabel: "Language",
-  thinking: "Sehat AI is thinking…",
-  assistantName: "Sehat AI",
-  followUpHeading: "One more thing would help me understand this better",
-  evidenceHeading: "Information sources",
-  reviewedOn: "Reviewed",
-  disclaimerHeading: "Important",
-  limitedConfidence:
-    "This guidance is based on limited information. If you are worried, or symptoms worsen, seek medical care.",
-  errorOffline: "Sehat AI could not be reached. Please check your connection and try again.",
-  errorServer: "Something went wrong on our side. Please try again in a moment.",
-  errorValidation: "Please enter a message before sending.",
-  errorTooLong: "Your message is too long. Please shorten it and try again.",
-  errorClosed: "This conversation has ended. Start a new conversation to continue.",
-  errorNotFound: "That conversation could not be found. Start a new conversation to continue.",
-  errorUnavailable: "Sehat AI is temporarily unable to process this message. Please try again shortly.",
-  errorGeneric: "Something went wrong. Please try again.",
-  retry: "Try again",
-  sessionEnded: "This conversation has ended.",
-  youLabel: "You",
-  disclaimerText:
-    "Sehat AI provides general next-step guidance only. It is not a medical diagnosis and does not replace a qualified healthcare professional.",
-  triageLabels: {
-    emergency: "Seek emergency care now",
-    urgent_same_day: "See a professional today",
-    routine: "Arrange a routine review",
-    self_care: "Self-care at home",
-    needs_more_info: "A few more details needed",
-  },
-};
-
-const ur: StringTable = {
-  appName: "صحت اے آئی",
-  tagline: "مصنوعی ذہانت پر مبنی صحت رہنمائی اور علامات کی جانچ",
-  heroTitle: "اپنی علامات سمجھیں۔ اگلے قدم کی رہنمائی پائیں۔",
-  heroSubtitle:
-    "اپنے الفاظ میں بتائیں کہ آپ کیسا محسوس کر رہے ہیں۔ صحت اے آئی چند اہم سوالات پوچھ کر مناسب اگلا قدم تجویز کرتا ہے — یہ تشخیص نہیں کرتا اور کبھی بھی ڈاکٹر کا متبادل نہیں۔",
-  starterHeading: "آپ اس طرح شروع کر سکتے ہیں",
-  inputPlaceholder: "اپنی علامات بیان کریں…",
-  send: "بھیجیں",
-  newConversation: "نئی گفتگو",
-  languageLabel: "زبان",
-  thinking: "صحت اے آئی سوچ رہا ہے…",
-  assistantName: "صحت اے آئی",
-  followUpHeading: "بہتر رہنمائی کے لیے ایک اور معلومات درکار ہے",
-  evidenceHeading: "معلومات کے ذرائع",
-  reviewedOn: "جائزہ لیا گیا",
-  disclaimerHeading: "اہم",
-  limitedConfidence:
-    "یہ رہنمائی محدود معلومات پر مبنی ہے۔ اگر آپ کو تشویش ہو یا علامات بڑھیں تو طبی مدد حاصل کریں۔",
-  errorOffline: "صحت اے آئی سے رابطہ نہیں ہو سکا۔ براہ کرم اپنا کنکشن جانچ کر دوبارہ کوشش کریں۔",
-  errorServer: "ہماری طرف سے ایک مسئلہ پیش آیا۔ براہ کرم کچھ دیر بعد دوبارہ کوشش کریں۔",
-  errorValidation: "براہ کرم بھیجنے سے پہلے پیغام لکھیں۔",
-  errorTooLong: "آپ کا پیغام بہت لمبا ہے۔ براہ کرم اسے چھوٹا کر کے دوبارہ کوشش کریں۔",
-  errorClosed: "یہ گفتگو ختم ہو چکی ہے۔ جاری رکھنے کے لیے نئی گفتگو شروع کریں۔",
-  errorNotFound: "وہ گفتگو نہیں ملی۔ جاری رکھنے کے لیے نئی گفتگو شروع کریں۔",
-  errorUnavailable: "صحت اے آئی عارضی طور پر یہ پیغام پروسیس نہیں کر سکتا۔ براہ کرم جلد دوبارہ کوشش کریں۔",
-  errorGeneric: "کچھ غلط ہو گیا۔ براہ کرم دوبارہ کوشش کریں۔",
-  retry: "دوبارہ کوشش کریں",
-  sessionEnded: "یہ گفتگو ختم ہو چکی ہے۔",
-  youLabel: "آپ",
-  disclaimerText:
-    "صحت اے آئی صرف عمومی اگلے قدم کی رہنمائی فراہم کرتا ہے۔ یہ طبی تشخیص نہیں ہے اور کسی مستند طبی پیشہ ور کا متبادل نہیں۔",
-  triageLabels: {
-    emergency: "ابھی ایمرجنسی طبی مدد حاصل کریں",
-    urgent_same_day: "آج ہی کسی ماہر کو دکھائیں",
-    routine: "عام معائنہ کروائیں",
-    self_care: "گھر پر اپنی دیکھ بھال کریں",
-    needs_more_info: "کچھ مزید معلومات درکار ہیں",
-  },
-};
-
-const sd: StringTable = {
-  appName: "صحت اي آءِ",
-  tagline: "مصنوعي ذهانت تي ٻڌل صحت رهنمائي ۽ علامتن جي جانچ",
-  heroTitle: "پنهنجي علامتن کي سمجهو. ايندڙ قدم جي رهنمائي حاصل ڪريو.",
-  heroSubtitle:
-    "پنهنجن لفظن ۾ ٻڌايو ته توهان ڪيئن محسوس ڪري رهيا آهيو. صحت اي آءِ ڪجهه اهم سوال پڇي مناسب ايندڙ قدم تجويز ڪري ٿو — هي تشخيص نٿو ڪري ۽ ڪڏهن به ڊاڪٽر جو متبادل ناهي.",
-  starterHeading: "توهان هن ريت شروع ڪري سگهو ٿا",
-  inputPlaceholder: "پنهنجي علامتون بيان ڪريو…",
-  send: "موڪليو",
-  newConversation: "نئين ڳالهه ٻولهه",
-  languageLabel: "ٻولي",
-  thinking: "صحت اي آءِ سوچي رهيو آهي…",
-  assistantName: "صحت اي آءِ",
-  followUpHeading: "بهتر رهنمائي لاءِ هڪ وڌيڪ معلومات گهربل آهي",
-  evidenceHeading: "معلومات جا ذريعا",
-  reviewedOn: "جائزو ورتو ويو",
-  disclaimerHeading: "اهم",
-  limitedConfidence:
-    "هي رهنمائي محدود معلومات تي ٻڌل آهي. جيڪڏهن توهان کي پريشاني هجي يا علامتون وڌن ته طبي مدد وٺو.",
-  errorOffline: "صحت اي آءِ سان رابطو نه ٿي سگهيو. مهرباني ڪري پنهنجو ڪنيڪشن چيڪ ڪري ٻيهر ڪوشش ڪريو.",
-  errorServer: "اسان جي طرف کان هڪ مسئلو پيش آيو. مهرباني ڪري ٿوري دير بعد ٻيهر ڪوشش ڪريو.",
-  errorValidation: "مهرباني ڪري موڪلڻ کان پهريان پيغام لکو.",
-  errorTooLong: "توهان جو پيغام تمام ڊگهو آهي. مهرباني ڪري ان کي ننڍو ڪري ٻيهر ڪوشش ڪريو.",
-  errorClosed: "هي ڳالهه ٻولهه ختم ٿي چڪي آهي. جاري رکڻ لاءِ نئين ڳالهه ٻولهه شروع ڪريو.",
-  errorNotFound: "اها ڳالهه ٻولهه نه ملي. جاري رکڻ لاءِ نئين ڳالهه ٻولهه شروع ڪريو.",
-  errorUnavailable: "صحت اي آءِ عارضي طور تي هي پيغام پروسيس نٿو ڪري سگهي. مهرباني ڪري جلد ٻيهر ڪوشش ڪريو.",
-  errorGeneric: "ڪجهه غلط ٿي ويو. مهرباني ڪري ٻيهر ڪوشش ڪريو.",
-  retry: "ٻيهر ڪوشش ڪريو",
-  sessionEnded: "هي ڳالهه ٻولهه ختم ٿي چڪي آهي.",
-  youLabel: "توهان",
-  disclaimerText:
-    "صحت اي آءِ صرف عام ايندڙ قدم جي رهنمائي مهيا ڪري ٿو. هي طبي تشخيص ناهي ۽ ڪنهن مستند طبي ماهر جو متبادل ناهي.",
-  triageLabels: {
-    emergency: "هاڻي ايمرجنسي طبي مدد وٺو",
-    urgent_same_day: "اڄ ئي ڪنهن ماهر کي ڏيکاريو",
-    routine: "عام معائنو ڪرايو",
-    self_care: "گهر تي پنهنجي سنڀال ڪريو",
-    needs_more_info: "ڪجهه وڌيڪ معلومات گهربل آهي",
-  },
-};
-
-const TABLES: Record<Language, StringTable> = { en, ur, sd };
-
-export function strings(language: Language): StringTable {
-  return TABLES[language];
-}
-
-/** Benign UI example prompts only — never medical advice or diagnoses. */
-export const STARTER_PROMPTS: { key: string; text: Record<Language, string> }[] = [
+export const STARTER_PROMPTS = [
   {
     key: "headache",
     text: {
-      en: "I have a headache since yesterday",
-      ur: "کل سے میرے سر میں درد ہے",
-      sd: "ڪالهه کان منهنجي سر ۾ سور آهي",
+      en: "I've had a severe headache behind my eyes for 2 days.",
+      ur: "مجھے 2 دن سے آنکھوں کے پیچھے شدید سر درد ہے۔",
+      sd: "مون کي 2 ڏينهن کان اکين جي پويان سخت مٿي جو سور آهي.",
     },
   },
   {
-    key: "tired",
+    key: "fever",
     text: {
-      en: "I've been feeling unusually tired",
-      ur: "میں غیر معمولی طور پر تھکاوٹ محسوس کر رہا ہوں",
-      sd: "مان غير معمولي طور تي ٿڪاوٽ محسوس ڪري رهيو آهيان",
+      en: "My child has a high fever and won't eat.",
+      ur: "میرے بچے کو تیز بخار ہے اور وہ کچھ کھا نہیں رہا۔",
+      sd: "منهنجي ٻار کي تيز بخار آهي ۽ هو ڪجهه کائي نه رهيو آهي.",
     },
   },
   {
-    key: "throat",
+    key: "cough",
     text: {
-      en: "I have a sore throat and fever",
-      ur: "میرے گلے میں درد اور بخار ہے",
-      sd: "منهنجي گلي ۾ سور ۽ تپ آهي",
+      en: "I have a dry cough that gets worse at night.",
+      ur: "مجھے خشک کھانسی ہے جو رات کو بڑھ جاتی ہے۔",
+      sd: "مون کي سڪي کنگهه آهي جيڪا رات جو وڌي وڃي ٿي.",
     },
   },
 ];
+
+export const STRINGS = {
+  en: {
+    appName: "Sehat AI",
+    heroTitle: "How can I help you today?",
+    heroSubtitle: "Describe your symptoms in your own words, and I'll help you figure out what to do next.",
+    starterHeading: "Try asking about:",
+    inputPlaceholder: "Describe your symptoms…",
+    sendButton: "Send",
+    send: "Send",
+    newConversation: "New Conversation",
+    historyTitle: "History",
+    deleteSession: "Delete session",
+    confirmDelete: "Are you sure you want to delete this session? This cannot be undone.",
+    emptyHistory: "No past sessions.",
+    clinicianSummary: "Clinician Summary",
+    clinicianSummaryHeading: "Clinician Summary",
+    clinicianSummaryBadge: "Auto-generated",
+    copyHandoff: "Copy Handoff",
+    printHandoff: "Print",
+    copySuccess: "Copied!",
+    handoffTitle: "SEHATAI — CLINICIAN HANDOFF",
+    handoffDisclaimer1: "AI-assisted structured summary",
+    handoffDisclaimer2: "Verify information before clinical use.",
+    handoffFooter: "Important:\nThis summary assists clinical communication and does not replace\nprofessional clinical judgment.",
+    generatedLabel: "Generated",
+    modelAttributionLabel: "Model Attribution",
+    notProvided: "Not provided",
+    chiefComplaintLabel: "Chief Complaint",
+    triageDecisionLabel: "Triage Decision",
+    symptomsLabel: "Symptoms",
+    severityLabel: "Severity",
+    durationLabel: "Duration",
+    progressionLabel: "Progression",
+    demographicsLabel: "Demographics",
+    ageGroupLabel: "Age Group",
+    pregnancyLabel: "Pregnancy",
+    pregnantYes: "Pregnant",
+    pregnantNo: "Not pregnant",
+    redFlagsLabel: "Red Flags",
+    firedRulesLabel: "Fired Rules",
+    timelineLabel: "Timeline",
+    evidenceHeading: "Medical Evidence",
+    evidence: "Medical Evidence",
+    evidenceNote: "No specific guideline matched this query.",
+    evidenceSource: "Source",
+    followUpHeading: "Follow-up Questions",
+    followUp: "Follow-up Questions",
+    languageLabel: "Language",
+    assistantName: "Assistant",
+    assistant: "Assistant",
+    thinking: "Thinking...",
+    disclaimer: "This is a demonstration",
+    disclaimerText: "This is a demonstration. This tool does not provide medical advice, diagnosis, or treatment. Always consult a qualified healthcare provider for medical decisions.",
+    disclaimerHeading: "Disclaimer",
+    offlineError: "Unable to connect. Please check your internet connection and try again.",
+    errorOffline: "Unable to connect. Please check your internet connection and try again.",
+    errorServer: "Server error",
+    errorValidation: "Validation error",
+    errorTooLong: "Message too long",
+    errorClosed: "Connection closed",
+    errorNotFound: "Not found",
+    errorUnavailable: "Service unavailable",
+    errorGeneric: "An error occurred",
+    retryButton: "Retry",
+    retry: "Retry",
+    voiceInputUnsupported: "Voice input unavailable on this browser/language.",
+    voiceUnsupported: "Voice input unavailable on this browser/language.",
+    startSpeaking: "Start speaking",
+    voiceStart: "Start speaking",
+    stopListening: "Stop listening",
+    voiceStop: "Stop listening",
+    pulseListening: "Listening...",
+    voiceListening: "Listening...",
+    limitedConfidence: "Limited Confidence",
+    reviewedOn: "Reviewed on",
+    triageLabels: {
+      emergency: "Emergency",
+      urgent_same_day: "Urgent (Same Day)",
+      routine: "Routine Care",
+      self_care: "Self Care",
+      needs_more_info: "Needs More Information",
+    } as Record<TriageLevel, string>,
+  },
+  ur: {
+    appName: "صحت اے آئی",
+    heroTitle: "آج میں آپ کی کیا مدد کر سکتا ہوں؟",
+    actionStart: "بات چیت شروع کریں",
+    actionHistory: "تاریخ دیکھیں",
+    actionHandoff: "ڈاکٹر کی رپورٹ",
+    heroSubtitle: "اپنی علامات اپنے الفاظ میں بیان کریں، اور میں آپ کو یہ سمجھنے میں مدد کروں گا کہ آگے کیا کرنا ہے۔",
+    starterHeading: "ان کے بارے میں پوچھنے کی کوشش کریں:",
+    inputPlaceholder: "اپنی علامات بیان کریں...",
+    sendButton: "بھیجیں",
+    send: "بھیجیں",
+    newConversation: "نئی گفتگو",
+    historyTitle: "تاریخ",
+    deleteSession: "سیشن حذف کریں",
+    confirmDelete: "کیا آپ واقعی یہ سیشن حذف کرنا چاہتے ہیں؟ یہ عمل ناقابل واپسی ہے۔",
+    emptyHistory: "کوئی ماضی کے سیشن نہیں۔",
+    clinicianSummary: "طبی خلاصہ",
+    clinicianSummaryHeading: "طبی خلاصہ",
+    clinicianSummaryBadge: "خودکار طور پر تیار کردہ",
+    copyHandoff: "نقل کریں",
+    printHandoff: "پرنٹ کریں",
+    copySuccess: "نقل ہو گیا!",
+    handoffTitle: "SEHATAI — CLINICIAN HANDOFF",
+    handoffDisclaimer1: "اے آئی کی مدد سے تیار کردہ ساختہ خلاصہ",
+    handoffDisclaimer2: "طبی استعمال سے پہلے معلومات کی تصدیق کریں۔",
+    handoffFooter: "اہم:\nیہ خلاصہ طبی مواصلات میں مدد کرتا ہے اور پیشہ ورانہ طبی فیصلے کا متبادل نہیں ہے۔",
+    generatedLabel: "تیار کردہ",
+    modelAttributionLabel: "ماڈل انتساب",
+    notProvided: "فراہم نہیں کیا گیا",
+    chiefComplaintLabel: "بنیادی شکایت",
+    triageDecisionLabel: "ٹرائج کا فیصلہ",
+    symptomsLabel: "علامات",
+    severityLabel: "شدت",
+    durationLabel: "دورانیہ",
+    progressionLabel: "ترقی",
+    demographicsLabel: "آبادیات",
+    ageGroupLabel: "عمر کا گروپ",
+    pregnancyLabel: "حمل",
+    pregnantYes: "حاملہ",
+    pregnantNo: "حاملہ نہیں",
+    redFlagsLabel: "خطرے کی علامات",
+    firedRulesLabel: "لاگو قوانین",
+    timelineLabel: "ٹائم لائن",
+    evidenceHeading: "طبی شواہد",
+    evidence: "طبی شواہد",
+    evidenceNote: "اس سوال سے کوئی مخصوص ہدایت نامہ میل نہیں کھاتا۔",
+    evidenceSource: "ذریعہ",
+    followUpHeading: "مزید سوالات",
+    followUp: "مزید سوالات",
+    languageLabel: "زبان",
+    assistantName: "معاون",
+    assistant: "معاون",
+    thinking: "سوچ رہا ہے...",
+    disclaimer: "یہ ایک نمائشی ٹول ہے۔ یہ ٹول طبی مشورہ، تشخیص یا علاج فراہم نہیں کرتا۔ طبی فیصلوں کے لیے ہمیشہ کسی مستند ڈاکٹر سے رجوع کریں۔",
+    disclaimerText: "یہ ایک نمائشی ٹول ہے۔ یہ ٹول طبی مشورہ، تشخیص یا علاج فراہم نہیں کرتا۔ طبی فیصلوں کے لیے ہمیشہ کسی مستند ڈاکٹر سے رجوع کریں۔",
+    disclaimerHeading: "دستبرداری",
+    offlineError: "منسلک ہونے سے قاصر۔ براہ کرم اپنا انٹرنیٹ کنکشن چیک کریں اور دوبارہ کوشش کریں۔",
+    errorOffline: "منسلک ہونے سے قاصر۔ براہ کرم اپنا انٹرنیٹ کنکشن چیک کریں اور دوبارہ کوشش کریں۔",    
+    errorServer: "سرور کی خرابی",
+    errorValidation: "توثیق کی خرابی",
+    errorTooLong: "پیغام بہت طویل ہے",
+    errorClosed: "رابطہ منقطع ہو گیا",
+    errorNotFound: "نہیں ملا",
+    errorUnavailable: "سروس دستیاب نہیں",
+    errorGeneric: "ایک خرابی پیش آ گئی",
+    retryButton: "دوبارہ کوشش کریں",
+    retry: "دوبارہ کوشش کریں",
+    voiceInputUnsupported: "اس براؤزر/زبان پر صوتی ان پٹ دستیاب نہیں ہے۔",
+    voiceUnsupported: "اس براؤزر/زبان پر صوتی ان پٹ دستیاب نہیں ہے۔",
+    startSpeaking: "بولنا شروع کریں",
+    voiceStart: "بولنا شروع کریں",
+    stopListening: "سننا بند کریں",
+    voiceStop: "سننا بند کریں",
+    pulseListening: "سن رہا ہے...",
+    voiceListening: "سن رہا ہے...",
+    limitedConfidence: "محدود اعتماد",
+    reviewedOn: "جائزہ لیا گیا",
+    triageLabels: {
+      emergency: "ہنگامی حالت",
+      urgent_same_day: "فوری (آج ہی)",
+      routine: "معمول کی دیکھ بھال",
+      self_care: "ذاتی دیکھ بھال",
+      needs_more_info: "مزید معلومات درکار ہیں",
+    } as Record<TriageLevel, string>,
+  },
+  sd: {
+    appName: "صحت اي آءِ",
+    heroTitle: "اڄ مان توهان جي ڪهڙي مدد ڪري سگهان ٿو؟",
+    actionStart: "ڳالهه ٻولهه شروع ڪريو",
+    actionHistory: "تاريخ ڏسو",
+    actionHandoff: "ڊاڪٽر جي رپورٽ",
+    heroSubtitle: "پنهنجي علامتن کي پنهنجي لفظن ۾ بيان ڪريو، ۽ مان توهان کي اهو سمجهڻ ۾ مدد ڪندس ته اڳيان ڇا ڪرڻ گهرجي.",
+    starterHeading: "هنن بابت پڇڻ جي ڪوشش ڪريو:",
+    inputPlaceholder: "پنهنجون علامتون بيان ڪريو...",
+    sendButton: "موڪليو",
+    send: "موڪليو",
+    newConversation: "نئين ڳالهه ٻولهه",
+    historyTitle: "تاريخ",
+    deleteSession: "سيشن ختم ڪريو",
+    confirmDelete: "ڇا توھان واقعي ھي سيشن ختم ڪرڻ چاھيو ٿا؟ ھن عمل کي واپس نٿو ڪري سگھجي.",
+    emptyHistory: "ڪوبه ماضي جو سيشن ناهي.",
+    clinicianSummary: "ڊاڪٽر جو خلاصو",
+    clinicianSummaryHeading: "ڊاڪٽر جو خلاصو",
+    clinicianSummaryBadge: "خودڪار تيار ٿيل",
+    copyHandoff: "نقل ڪريو",
+    printHandoff: "پرنٽ ڪريو",
+    copySuccess: "نقل ٿي ويو!",
+    handoffTitle: "SEHATAI — CLINICIAN HANDOFF",
+    handoffDisclaimer1: "اي آءِ جي مدد سان تيار ڪيل خلاصو",
+    handoffDisclaimer2: "طبي استعمال کان اڳ معلومات جي تصديق ڪريو.",
+    handoffFooter: "اهم:\nهي خلاصو طبي رابطي ۾ مدد ڪري ٿو ۽ پيشه ورانه طبي فيصلي جو متبادل ناهي.",
+    generatedLabel: "تيار ڪيل",
+    modelAttributionLabel: "ماڊل انتساب",
+    notProvided: "مهيا نه ڪيو ويو",
+    chiefComplaintLabel: "مکيه شڪايت",
+    triageDecisionLabel: "ٽريج جو فيصلو",
+    symptomsLabel: "علامتون",
+    severityLabel: "شدت",
+    durationLabel: "مدو",
+    progressionLabel: "ترقي",
+    demographicsLabel: "آبادي جي ڄاڻ",
+    ageGroupLabel: "عمر جو گروپ",
+    pregnancyLabel: "حمل",
+    pregnantYes: "حامله",
+    pregnantNo: "حامله ناهي",
+    redFlagsLabel: "خطري جون نشانيون",
+    firedRulesLabel: "لاڳو ٿيل قاعدا",
+    timelineLabel: "ٽائيم لائن",
+    evidenceHeading: "طبي ثبوت",
+    evidence: "طبي ثبوت",
+    evidenceNote: "هن سوال سان ڪو به مخصوص هدايت نامو نٿو ملي.",
+    evidenceSource: "ذريعو",
+    followUpHeading: "وڌيڪ سوال",
+    followUp: "وڌيڪ سوال",
+    languageLabel: "ٻولي",
+    assistantName: "مددگار",
+    assistant: "مددگار",
+    thinking: "سوچي رهيو آهي...",
+    disclaimer: "هي هڪ نمائش آهي. هي اوزار طبي مشورو، تشخيص يا علاج مهيا نٿو ڪري. طبي فيصلن لاءِ هميشه ڪنهن قابل ڊاڪٽر سان صلاح ڪريو.",
+    disclaimerText: "هي هڪ نمائش آهي. هي اوزار طبي مشورو، تشخيص يا علاج مهيا نٿو ڪري. طبي فيصلن لاءِ هميشه ڪنهن قابل ڊاڪٽر سان صلاح ڪريو.",
+    disclaimerHeading: "دستبرداري",
+    offlineError: "ڳنڍڻ کان قاصر. مھرباني ڪري پنھنجو انٽرنيٽ ڪنيڪشن چيڪ ڪريو ۽ ٻيھر ڪوشش ڪريو.",
+    errorOffline: "ڳنڍڻ کان قاصر. مھرباني ڪري پنھنجو انٽرنيٽ ڪنيڪشن چيڪ ڪريو ۽ ٻيھر ڪوشش ڪريو.",
+    errorServer: "سرور جي خرابي",
+    errorValidation: "تصديق جي خرابي",
+    errorTooLong: "پيغام تمام ڊگهو آهي",
+    errorClosed: "رابطو ختم ٿي ويو",
+    errorNotFound: "نه مليو",
+    errorUnavailable: "سروس دستياب ناهي",
+    errorGeneric: "هڪ خرابي ٿي پئي",
+    retryButton: "ٻيهر ڪوشش ڪريو",
+    retry: "ٻيهر ڪوشش ڪريو",
+    voiceInputUnsupported: "هن برائوزر/ٻولي تي آواز جو ان پٽ دستياب ناهي.",
+    voiceUnsupported: "هن برائوزر/ٻولي تي آواز جو ان پٽ دستياب ناهي.",
+    startSpeaking: "ڳالهائڻ شروع ڪريو",
+    voiceStart: "ڳالهائڻ شروع ڪريو",
+    stopListening: "ٻڌڻ بند ڪريو",    
+    voiceStop: "ٻڌڻ بند ڪريو",
+    pulseListening: "ٻڌي رهيو آهي...",
+    voiceListening: "ٻڌي رهيو آهي...",
+    limitedConfidence: "محدود اعتماد",
+    reviewedOn: "جائزو ورتو ويو",
+    triageLabels: {
+      emergency: "هنگامي حالت",
+      urgent_same_day: "تڪڙو (اڄ ئي)",
+      routine: "معمولي سنڀال",
+      self_care: "پنهنجي سنڀال",
+      needs_more_info: "وڌيڪ معلومات گهربل آهي",
+    } as Record<TriageLevel, string>,
+  },
+};
+
+export function strings(language: Language): any {
+  return STRINGS[language];
+}
+
+export function directionOf(language: Language): "ltr" | "rtl" {
+  return language === "ur" || language === "sd" ? "rtl" : "ltr";
+}

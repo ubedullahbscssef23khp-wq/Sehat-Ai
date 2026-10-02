@@ -59,3 +59,15 @@ class TraceRecordRow(Base):
     step: Mapped[str] = mapped_column(Text, nullable=False)
     created_at: Mapped[str] = mapped_column(Text, nullable=False)
     trace_json: Mapped[str] = mapped_column(Text, nullable=False)
+
+
+class ResponseRecordRow(Base):
+    __tablename__ = "response_records"
+
+    seq: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    id: Mapped[str] = mapped_column(Text, nullable=False, unique=True, index=True)
+    session_id: Mapped[str] = mapped_column(
+        Text, ForeignKey("sessions.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    created_at: Mapped[str] = mapped_column(Text, nullable=False)
+    response_json: Mapped[str] = mapped_column(Text, nullable=False)

@@ -21,7 +21,12 @@ from app.conversation.completeness import missing_required_fields
 from app.conversation.composition import ResponseComposer
 from app.conversation.errors import SessionClosedError, SessionNotFoundError
 from app.conversation.followups import FollowUpPhraser
-from app.conversation.responses import NO_EVIDENCE_NOTE, build_guidance, build_rephrase_guidance
+from app.conversation.responses import (
+    NO_EVIDENCE_NOTE,
+    build_guidance,
+    build_rephrase_guidance,
+    fallback_user_message,
+)
 from app.conversation.summary import build_clinician_summary
 from app.extraction.service import ExtractionService
 from app.knowledge.retrieval import LexicalKnowledgeRetriever
@@ -42,6 +47,7 @@ from app.models import (
     SafetyAssessment,
     SafetyLevel,
     Session,
+    SessionHistory,
     SessionStatus,
     StructuredCase,
     TriageLevel,
@@ -49,10 +55,12 @@ from app.models import (
 from app.persistence.repositories import (
     CaseRepository,
     MessageRepository,
+    ResponseRepository,
     SessionRepository,
     TraceRepository,
 )
 from app.safety.engine import evaluate_rules
+from app.safety.signals import validate_red_flag_signals
 from app.safety.prescreen import evaluate_prescreen
 from app.triage.engine import decide
 
@@ -85,6 +93,7 @@ class ConversationOrchestrator:
         self._messages = MessageRepository(session_factory)
         self._cases = CaseRepository(session_factory)
         self._traces = TraceRepository(session_factory)
+        self._responses = ResponseRepository(session_factory)
         self._extraction = ExtractionService(provider, templates)
         self._phraser = FollowUpPhraser(provider, templates)
         self._composer = ResponseComposer(provider, templates)
@@ -103,6 +112,19 @@ class ConversationOrchestrator:
     def get_session(self, session_id: str) -> Session | None:
         return self._sessions.get(session_id)
 
+    def get_history(self, session_id: str) -> SessionHistory | None:
+        session = self._sessions.get(session_id)
+        if session is None:
+            return None
+        return SessionHistory(
+            session=session,
+            messages=self._messages.list_for_session(session_id),
+            responses=self._responses.list_for_session(session_id),
+        )
+
+    def delete_session(self, session_id: str) -> bool:
+        return self._sessions.delete(session_id)
+
     async def handle_message(self, session_id: str, text: str) -> GuidanceResponse:
         session = self._sessions.get(session_id)
         if session is None:
@@ -120,6 +142,10 @@ class ConversationOrchestrator:
         )
         self._messages.append(user_message)
         input_hash = hashlib.sha256(text.strip().encode("utf-8")).hexdigest()
+
+        def _emit(response: GuidanceResponse) -> GuidanceResponse:
+            self._responses.append(session_id, response)
+            return response
 
         # Step 2: deterministic emergency pre-screen — before any LLM work.
         matched = evaluate_prescreen(self._patterns, text)
@@ -146,7 +172,7 @@ class ConversationOrchestrator:
             )
             decision = decide(StructuredCase(chief_complaint=text.strip()), assessment)
             self._sessions.set_status(session_id, SessionStatus.ESCALATED)
-            return build_guidance(session_id, decision)
+            return _emit(build_guidance(session_id, decision))
 
         # Step 3: structured extraction (LLM; language understanding only).
         history = tuple(
@@ -164,13 +190,16 @@ class ConversationOrchestrator:
 
         if outcome.case is None:
             self._sessions.set_status(session_id, SessionStatus.COLLECTING)
-            return build_rephrase_guidance(session_id)
+            return _emit(build_rephrase_guidance(session_id))
         case = outcome.case
 
         # Step 5 (field selection): completeness is computed deterministically;
         # the model's own gap report is never trusted.
         fields = missing_required_fields(case)
         case = case.model_copy(update={"missing_fields": fields})
+        
+        # Enforce the signal allowlist governance gate (REQ-001)
+        case.red_flag_signals = validate_red_flag_signals(case.red_flag_signals)
         self._cases.append(session_id, case)
 
         # Step 4: deterministic safety assessment (pure rules, no LLM).
@@ -220,7 +249,7 @@ class ConversationOrchestrator:
         )
 
         if follow_ups:
-            return build_guidance(session_id, decision, follow_ups)
+            return _emit(build_guidance(session_id, decision, follow_ups))
 
         final_status = (
             SessionStatus.ESCALATED
@@ -269,11 +298,26 @@ class ConversationOrchestrator:
             model_attribution=None,  # Model attribution will be added if provider info becomes available.
         )
 
-        return build_guidance(
+        guidance_message: LocalizedText | None = None
+        if not used_fallback:
+            if session.preferred_language == Language.UR:
+                guidance_message = LocalizedText(
+                    en=fallback_user_message(decision.level).en,
+                    ur=composed_text,
+                )
+            elif session.preferred_language == Language.SD:
+                guidance_message = LocalizedText(
+                    en=fallback_user_message(decision.level).en,
+                    sd=composed_text,
+                )
+            else:
+                guidance_message = LocalizedText(en=composed_text)
+
+        return _emit(build_guidance(
             session_id,
             decision,
-            user_message=None if used_fallback else LocalizedText(en=composed_text),
+            user_message=guidance_message,
             evidence=evidence,
             evidence_note=evidence_note,
             clinician_summary=clinician_summary,
-        )
+        ))

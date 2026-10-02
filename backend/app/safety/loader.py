@@ -13,7 +13,7 @@ from typing import Any
 import yaml
 from pydantic import ValidationError
 
-from app.models import EmergencyPattern, RedFlagRule
+from app.models import EmergencyPattern, RedFlagRule, ReviewStatus
 
 
 class RuleLoadError(Exception):
@@ -47,6 +47,8 @@ def load_rules_file(path: Path) -> list[RedFlagRule]:
 
 
 def load_rules_dir(directory: Path) -> list[RedFlagRule]:
+    if not directory.is_dir():
+        raise RuleLoadError(f"Directory not found: {directory}")
     rules: list[RedFlagRule] = []
     seen: set[str] = set()
     paths = sorted(directory.glob("*.yaml")) + sorted(directory.glob("*.yml"))
@@ -87,6 +89,8 @@ def load_patterns_file(path: Path) -> list[EmergencyPattern]:
 
 
 def load_patterns_dir(directory: Path) -> list[EmergencyPattern]:
+    if not directory.is_dir():
+        raise RuleLoadError(f"Directory not found: {directory}")
     patterns: list[EmergencyPattern] = []
     seen: set[str] = set()
     paths = sorted(directory.glob("*.yaml")) + sorted(directory.glob("*.yml"))
@@ -95,5 +99,6 @@ def load_patterns_dir(directory: Path) -> list[EmergencyPattern]:
             if pattern.id in seen:
                 raise RuleLoadError(f"{path.name}: duplicate pattern id {pattern.id!r}")
             seen.add(pattern.id)
-            patterns.append(pattern)
+            if pattern.review_status == ReviewStatus.APPROVED:
+                patterns.append(pattern)
     return patterns

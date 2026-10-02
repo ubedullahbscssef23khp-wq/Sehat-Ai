@@ -7,7 +7,7 @@
  */
 
 import { useCallback, useRef, useState } from "react";
-import { ApiError, NetworkError, createSession, sendMessage } from "../api/client";
+import { ApiError, NetworkError, getSessionHistory, v1SendMessage } from "../api/client";
 import type { GuidanceResponse, Language, Session } from "../api/types";
 
 export type Turn =
@@ -70,9 +70,13 @@ export interface ChatStore {
   retry: () => void;
   reset: () => void;
   setLanguage: (language: Language) => void;
+  loadSession: (session_id: string) => Promise<void>;
 }
 
-export function useChat(initialLanguage: Language = "en"): ChatStore {
+export function useChat(
+  initialLanguage: Language = "en",
+  onSessionUpdate?: (id: string, preview?: string) => void
+): ChatStore {
   const [language, setLanguageState] = useState<Language>(initialLanguage);
   const [session, setSession] = useState<Session | null>(null);
   const [turns, setTurns] = useState<Turn[]>([]);
@@ -96,12 +100,22 @@ export function useChat(initialLanguage: Language = "en"): ChatStore {
 
     try {
       let current = sessionRef.current;
-      if (current === null) {
-        current = await createSession(languageRef.current);
-        sessionRef.current = current;
-        setSession(current);
+      const isNew = current === null;
+      const response = await v1SendMessage(text, current?.id, languageRef.current);
+      
+      if (isNew && !current) {
+        // Mock a session structure if new, or wait for backend to provide it
+        // The backend doesn't return the full session from v1SendMessage, it returns GuidanceResponse.
+        // We can extract session_id from response
+        const newSession = { id: response.session_id, preferred_language: languageRef.current, status: response.triage.level, created_at: new Date().toISOString() };
+        sessionRef.current = newSession as any;
+        setSession(newSession as any);
+        current = newSession as any;
       }
-      const response = await sendMessage(current.id, text);
+      
+      if (onSessionUpdate && current) {
+        onSessionUpdate(current.id, isNew ? text.slice(0, 60) : undefined);
+      }
       const assistantTurn: Turn = {
         kind: "assistant",
         id: nextId("assistant"),
@@ -148,6 +162,40 @@ export function useChat(initialLanguage: Language = "en"): ChatStore {
     setError(null);
   }, []);
 
+  const loadSession = useCallback(async (session_id: string) => {
+    if (busyRef.current) return;
+    busyRef.current = true;
+    setBusy(true);
+    setError(null);
+    try {
+      const history = await getSessionHistory(session_id);
+      sessionRef.current = history.session;
+      setSession(history.session);
+      
+      const nextLanguage = history.session.preferred_language;
+      languageRef.current = nextLanguage;
+      setLanguageState(nextLanguage);
+      
+      const nextTurns: Turn[] = [];
+      const userMessages = history.messages.filter(m => m.role === "user");
+      
+      for (let i = 0; i < userMessages.length; i++) {
+         const msg = userMessages[i];
+         nextTurns.push({ kind: "user", id: msg.id, text: msg.text, at: Date.parse(msg.created_at) });
+         const resp = history.responses[i];
+         if (resp) {
+            nextTurns.push({ kind: "assistant", id: nextId("assistant"), response: resp, at: Date.parse(resp.clinician_summary?.generated_at || msg.created_at) });
+         }
+      }
+      setTurns(nextTurns);
+    } catch (failure) {
+      setError(classify(failure));
+    } finally {
+      busyRef.current = false;
+      setBusy(false);
+    }
+  }, []);
+
   const setLanguage = useCallback((next: Language) => {
     if (busyRef.current || next === languageRef.current) {
       return;
@@ -174,5 +222,6 @@ export function useChat(initialLanguage: Language = "en"): ChatStore {
     retry,
     reset,
     setLanguage,
+    loadSession,
   };
 }

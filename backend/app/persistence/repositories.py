@@ -9,12 +9,13 @@ from __future__ import annotations
 import uuid
 from datetime import datetime, timezone
 
-from sqlalchemy import select
+from sqlalchemy import delete, select
 from sqlalchemy.orm import Session as SASession
 from sqlalchemy.orm import sessionmaker
 
 from app.models import (
     DecisionTrace,
+    GuidanceResponse,
     Language,
     Message,
     MessageRole,
@@ -22,7 +23,7 @@ from app.models import (
     SessionStatus,
     StructuredCase,
 )
-from app.persistence.models import CaseRecordRow, MessageRow, SessionRow, TraceRecordRow
+from app.persistence.models import CaseRecordRow, MessageRow, ResponseRecordRow, SessionRow, TraceRecordRow
 
 
 def _new_id() -> str:
@@ -83,6 +84,22 @@ class SessionRepository:
             if row is None:
                 raise KeyError(session_id)
             return row.followup_rounds
+
+    def delete(self, session_id: str) -> bool:
+        with self._session_factory() as sa:
+            row = sa.get(SessionRow, session_id)
+            if row is None:
+                return False
+            # Manually delete all dependent rows inside this transaction
+            # just in case SQLite foreign-key pragmas aren't enabled.
+            sa.execute(delete(MessageRow).where(MessageRow.session_id == session_id))
+            sa.execute(delete(CaseRecordRow).where(CaseRecordRow.session_id == session_id))
+            sa.execute(delete(TraceRecordRow).where(TraceRecordRow.session_id == session_id))
+            sa.execute(delete(ResponseRecordRow).where(ResponseRecordRow.session_id == session_id))
+            
+            sa.delete(row)
+            sa.commit()
+            return True
 
     @staticmethod
     def _to_domain(row: SessionRow) -> Session:
@@ -183,3 +200,29 @@ class TraceRepository:
                 .order_by(TraceRecordRow.seq)
             ).all()
             return [DecisionTrace.model_validate_json(row.trace_json) for row in rows]
+
+
+class ResponseRepository:
+    def __init__(self, session_factory: sessionmaker[SASession]) -> None:
+        self._session_factory = session_factory
+
+    def append(self, session_id: str, response: GuidanceResponse) -> None:
+        with self._session_factory() as sa:
+            sa.add(
+                ResponseRecordRow(
+                    id=_new_id(),
+                    session_id=session_id,
+                    created_at=_now_iso(),
+                    response_json=response.model_dump_json(),
+                )
+            )
+            sa.commit()
+
+    def list_for_session(self, session_id: str) -> list[GuidanceResponse]:
+        with self._session_factory() as sa:
+            rows = sa.scalars(
+                select(ResponseRecordRow)
+                .where(ResponseRecordRow.session_id == session_id)
+                .order_by(ResponseRecordRow.seq)
+            ).all()
+            return [GuidanceResponse.model_validate_json(row.response_json) for row in rows]

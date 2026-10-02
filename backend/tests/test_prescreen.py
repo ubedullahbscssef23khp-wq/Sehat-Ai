@@ -12,7 +12,7 @@ from pathlib import Path
 
 import pytest
 
-from app.models import EmergencyPattern
+from app.models import EmergencyPattern, ReviewStatus
 from app.safety.loader import RuleLoadError, parse_patterns
 from app.safety.paths import PRESCREEN_DIR
 from app.safety.prescreen import evaluate_prescreen
@@ -25,6 +25,7 @@ def make_pattern(pattern_id: str, text: str) -> EmergencyPattern:
         description=f"synthetic pattern {pattern_id}",
         source="synthetic test fixture (not medical content)",
         review_date=date(2026, 1, 1),
+        review_status=ReviewStatus.APPROVED,
     )
 
 
@@ -70,6 +71,7 @@ def test_parse_patterns_rejects_duplicate_ids() -> None:
                 "description": "d",
                 "source": "s",
                 "review_date": "2026-01-01",
+                "review_status": "approved",
             },
             {
                 "id": "p1",
@@ -77,6 +79,7 @@ def test_parse_patterns_rejects_duplicate_ids() -> None:
                 "description": "d",
                 "source": "s",
                 "review_date": "2026-01-01",
+                "review_status": "approved",
             },
         ]
     }
@@ -96,3 +99,29 @@ def test_load_patterns_dir_empty_returns_empty_list(tmp_path: Path) -> None:
     from app.safety.loader import load_patterns_dir
 
     assert load_patterns_dir(tmp_path) == []
+
+def test_unicode_nfc_normalization_prescreen() -> None:
+    # 1. NFC-normalized input matches the equivalent normalized pattern.
+    patterns = [make_pattern("p1", "بيماري")]  # NFC
+    matched = evaluate_prescreen(patterns, "بيماري")  # NFC
+    assert [p.id for p in matched] == ["p1"]
+
+    # 2. Canonically equivalent decomposed input matches the same pattern.
+    # NFD form of "بيماري"
+    import unicodedata
+    nfd_text = unicodedata.normalize("NFD", "بيماري")
+    assert evaluate_prescreen(patterns, nfd_text) == patterns
+
+    # 3. Non-equivalent Unicode text does NOT match.
+    assert evaluate_prescreen(patterns, "بيما") == []
+
+    # 4. Original stored pattern text remains unchanged.
+    assert patterns[0].pattern == "بيماري"
+    
+    # 5. English casefold behavior remains unchanged.
+    en_patterns = [make_pattern("en1", "CHEST PAIN")]
+    assert [p.id for p in evaluate_prescreen(en_patterns, "chest pain")] == ["en1"]
+    
+    # 8. Both pattern and input are normalized symmetrically.
+    nfd_patterns = [make_pattern("p2", unicodedata.normalize("NFD", "بيماري"))]
+    assert [p.id for p in evaluate_prescreen(nfd_patterns, "بيماري")] == ["p2"]

@@ -1,3 +1,5 @@
+from __future__ import annotations
+from unittest.mock import patch
 """Tests for Phase 9: Clinician-ready summary projection.
 
 Tests ensure that ClinicianSummary is a deterministic projection of already-
@@ -5,7 +7,6 @@ validated state without introducing new clinical reasoning, LLM calls,
 retrieval, or medical claims.
 """
 
-from __future__ import annotations
 
 import asyncio
 from datetime import datetime, timedelta, timezone
@@ -128,13 +129,14 @@ def test_summary_case_preserves_raw_excerpt(tmp_path: Path) -> None:
 # =========================================================================
 
 
+@patch('app.safety.signals._ALLOWED_SIGNALS', {'TEST_SIGNAL_ALPHA'})
 def test_summary_fired_rules_match_safety_assessment(tmp_path: Path) -> None:
     """The ClinicianSummary.fired_rules exactly match the safety assessment."""
-    rule = make_signal_rule("T-RULE-1", "synthetic-red-flag", SafetyLevel.URGENT)
+    rule = make_signal_rule("T-RULE-1", "TEST_SIGNAL_ALPHA", SafetyLevel.URGENT)
     harness = OrchestratorHarness(
         tmp_path,
         scripts=(
-            case_json(red_flag_signals=["synthetic-red-flag"]),
+            case_json(red_flag_signals=["TEST_SIGNAL_ALPHA"]),
         ),
         rules=[rule],
     )
@@ -319,12 +321,13 @@ def test_summary_generation_makes_no_extra_llm_calls(tmp_path: Path) -> None:
     # for extraction + response composition (2 calls for a complete case).
 
 
+@patch('app.safety.signals._ALLOWED_SIGNALS', {'TEST_SIGNAL_ALPHA'})
 def test_summary_does_not_duplicate_triage_evaluation(tmp_path: Path) -> None:
     """Building the summary does not recalculate triage."""
-    rule = make_signal_rule("T-RULE-1", "synthetic-red-flag", SafetyLevel.URGENT)
+    rule = make_signal_rule("T-RULE-1", "TEST_SIGNAL_ALPHA", SafetyLevel.URGENT)
     harness = OrchestratorHarness(
         tmp_path,
-        scripts=(case_json(red_flag_signals=["synthetic-red-flag"]),),
+        scripts=(case_json(red_flag_signals=["TEST_SIGNAL_ALPHA"]),),
         rules=[rule],
     )
     session = harness.orchestrator.create_session(Language.EN)
@@ -339,12 +342,13 @@ def test_summary_does_not_duplicate_triage_evaluation(tmp_path: Path) -> None:
     assert response.clinician_summary.triage_decision.level == response.triage.level
 
 
+@patch('app.safety.signals._ALLOWED_SIGNALS', {'TEST_SIGNAL_ALPHA'})
 def test_summary_does_not_duplicate_rule_evaluation(tmp_path: Path) -> None:
     """Building the summary does not re-evaluate rules."""
-    rule = make_signal_rule("T-RULE-1", "synthetic-red-flag", SafetyLevel.URGENT)
+    rule = make_signal_rule("T-RULE-1", "TEST_SIGNAL_ALPHA", SafetyLevel.URGENT)
     harness = OrchestratorHarness(
         tmp_path,
-        scripts=(case_json(red_flag_signals=["synthetic-red-flag"]),),
+        scripts=(case_json(red_flag_signals=["TEST_SIGNAL_ALPHA"]),),
         rules=[rule],
     )
     session = harness.orchestrator.create_session(Language.EN)

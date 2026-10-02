@@ -1,0 +1,28 @@
+{
+  "source": {
+    "publisher": "Centers for Disease Control and Prevention",
+    "title": "Signs and Symptoms of Stroke",
+    "canonical_url": "https://www.cdc.gov/stroke/signs-symptoms/index.html",
+    "official_publication_date": "2024-05-15",
+    "official_update_date": "2026-05-19",
+    "official_version": null,
+    "jurisdiction": "US / Global Public Health",
+    "language": "en",
+    "clinical_domain": "neurology"
+  },
+  "ingestion": {
+    "ingestion_id": "src-cdc-stroke-signs-2026-v1",
+    "retrieved_at": "2026-10-02T11:00:00Z",
+    "ingestion_method": "curated_snapshot",
+    "raw_content_sha256": "b1c7a5dd8260380bedc32ea2df7a39f07828f606c1c31f3a072968f01caf97c6",
+    "internal_version": "2.0",
+    "provenance_type": "authoritative_public_source",
+    "verification_status": "authoritative_live_retrieval_verified",
+    "previous_snapshot_id": "cdc-stroke-signs-2024",
+    "supersedes": "cdc-stroke-signs-2024"
+  },
+  "document_id": "cdc-stroke-signs-2026",
+  "content_hash": "8c24edf1467aa59b38d01b97fe907d9edd1c0bbd051ae67caaf9a651e59f50b4",
+  "review_status": "pending_domain_review",
+  "chunks_count": 13
+}

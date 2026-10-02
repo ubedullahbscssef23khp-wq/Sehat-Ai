@@ -234,3 +234,95 @@ def test_retriever_rejects_nothing_but_returns_deterministically() -> None:
     retriever = LexicalKnowledgeRetriever([entry])
     case = StructuredCase.model_validate_json(case_json())
     assert retriever.retrieve(case) == retriever.retrieve(case)
+
+
+# ---------------------------------------------------------------------------
+# Multilingual response composition & LocalizedText field assignment
+# ---------------------------------------------------------------------------
+
+
+def test_english_response_places_generated_text_in_en(tmp_path: Path) -> None:
+    synthetic_en = "Please monitor your symptoms and rest."
+    harness = OrchestratorHarness(
+        tmp_path,
+        scripts=(case_json(), synthetic_en),
+    )
+    session = harness.orchestrator.create_session(preferred_language=Language.EN)
+    response = asyncio.run(harness.orchestrator.handle_message(session.id, "synthetic message"))
+    assert response.user_message.en == synthetic_en
+    assert response.user_message.ur is None
+    assert response.user_message.sd is None
+    assert response.user_message.for_language(Language.EN) == synthetic_en
+    # Verify no extra LLM call (1 for extraction, 1 for composition)
+    assert isinstance(harness.provider, MockProvider)
+    assert len(harness.provider.requests) == 2
+
+
+def test_urdu_response_assigns_generated_text_to_ur_not_en(tmp_path: Path) -> None:
+    synthetic_ur = "براہ کرم اپنی علامات کی نگرانی کریں اور آرام کریں۔"
+    harness = OrchestratorHarness(
+        tmp_path,
+        scripts=(case_json(), synthetic_ur),
+    )
+    session = harness.orchestrator.create_session(preferred_language=Language.UR)
+    response = asyncio.run(harness.orchestrator.handle_message(session.id, "synthetic message"))
+    # generated text is assigned to LocalizedText.ur
+    assert response.user_message.ur == synthetic_ur
+    # it is NOT incorrectly copied into LocalizedText.en
+    assert response.user_message.en != synthetic_ur
+    # en retains deterministic English fallback text
+    assert response.user_message.en == fallback_user_message(response.triage.level).en
+    assert response.user_message.sd is None
+    # for_language resolves correctly
+    assert response.user_message.for_language(Language.UR) == synthetic_ur
+    assert response.user_message.for_language(Language.EN) == fallback_user_message(response.triage.level).en
+    # Verify no extra LLM call (1 for extraction, 1 for composition)
+    assert isinstance(harness.provider, MockProvider)
+    assert len(harness.provider.requests) == 2
+    # API structure compatibility: disclaimers and schema intact
+    assert len(response.disclaimers) >= 1
+    assert response.session_id == session.id
+
+
+def test_sindhi_response_assigns_generated_text_to_sd_not_en(tmp_path: Path) -> None:
+    synthetic_sd = "مهرباني ڪري پنهنجي علامتن جي نگراني ڪريو ۽ آرام ڪريو."
+    harness = OrchestratorHarness(
+        tmp_path,
+        scripts=(case_json(), synthetic_sd),
+    )
+    session = harness.orchestrator.create_session(preferred_language=Language.SD)
+    response = asyncio.run(harness.orchestrator.handle_message(session.id, "synthetic message"))
+    # generated text is assigned to LocalizedText.sd
+    assert response.user_message.sd == synthetic_sd
+    # it is NOT incorrectly copied into LocalizedText.en
+    assert response.user_message.en != synthetic_sd
+    # en retains deterministic English fallback text
+    assert response.user_message.en == fallback_user_message(response.triage.level).en
+    assert response.user_message.ur is None
+    # for_language resolves correctly
+    assert response.user_message.for_language(Language.SD) == synthetic_sd
+    assert response.user_message.for_language(Language.EN) == fallback_user_message(response.triage.level).en
+    # Verify no extra LLM call (1 for extraction, 1 for composition)
+    assert isinstance(harness.provider, MockProvider)
+    assert len(harness.provider.requests) == 2
+    # API structure compatibility: disclaimers and schema intact
+    assert len(response.disclaimers) >= 1
+    assert response.session_id == session.id
+
+
+def test_multilingual_output_policy_violation_falls_back_safely(tmp_path: Path) -> None:
+    # Diagnostic claim violates policy
+    violating_text = "You have malaria. Take chloroquine."
+    harness = OrchestratorHarness(
+        tmp_path,
+        scripts=(case_json(), violating_text),
+    )
+    session = harness.orchestrator.create_session(preferred_language=Language.UR)
+    response = asyncio.run(harness.orchestrator.handle_message(session.id, "synthetic message"))
+    # Falls back to deterministic fallback with all languages
+    expected_fallback = fallback_user_message(response.triage.level)
+    assert response.user_message == expected_fallback
+    assert response.user_message.for_language(Language.UR) == expected_fallback.ur
+    assert "malaria" not in response.user_message.for_language(Language.UR).casefold()
+    assert "malaria" not in response.user_message.en.casefold()
+

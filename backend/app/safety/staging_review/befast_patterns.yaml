@@ -1,0 +1,36 @@
+patterns:
+- id: BEFAST-B-001
+  pattern: loss of balance
+  description: Sudden loss of balance or coordination
+  source: CDC - Signs and Symptoms of Stroke
+  review_date: '2026-09-12'
+  review_status: pending_domain_review
+  review_notes: 'Source URL: https://www.cdc.gov/stroke/signs-symptoms/index.html'
+- id: BEFAST-E-001
+  pattern: vision loss
+  description: Sudden vision change or loss
+  source: WHO - Stroke fact sheet
+  review_date: '2026-09-12'
+  review_status: pending_domain_review
+  review_notes: 'Source URL: https://www.who.int/news-room/fact-sheets/detail/stroke'
+- id: BEFAST-F-001
+  pattern: facial droop
+  description: Sudden facial weakness or drooping
+  source: AHA/ASA B.E. F.A.S.T.
+  review_date: '2026-09-12'
+  review_status: pending_domain_review
+  review_notes: 'Source URL: https://newsroom.heart.org/news/knowing-stroke-signs-can-save-a-life-when-every-minute-counts'
+- id: BEFAST-A-001
+  pattern: arm weakness
+  description: Weakness in one or both arms
+  source: CDC - Signs and Symptoms of Stroke
+  review_date: '2026-09-12'
+  review_status: pending_domain_review
+  review_notes: 'Source URL: https://www.cdc.gov/stroke/signs-symptoms/index.html'
+- id: BEFAST-S-001
+  pattern: slurred speech
+  description: Slurred or strange speech
+  source: WHO - Stroke fact sheet
+  review_date: '2026-09-12'
+  review_status: pending_domain_review
+  review_notes: 'Source URL: https://www.who.int/news-room/fact-sheets/detail/stroke'

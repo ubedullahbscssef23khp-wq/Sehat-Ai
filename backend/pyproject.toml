@@ -2,7 +2,7 @@
 name = "sehat-ai-backend"
 version = "0.0.1"
 description = "Sehat AI backend: AI-assisted healthcare guidance and symptom triage"
-requires-python = ">=3.11"
+requires-python = ">=3.10"
 dependencies = [
     "fastapi>=0.115,<1.0",
     "uvicorn[standard]>=0.30",

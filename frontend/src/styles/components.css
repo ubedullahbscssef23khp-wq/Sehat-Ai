@@ -124,9 +124,9 @@
 
 .hero {
   max-width: 40rem;
-  margin: 6vh auto 0;
+  margin: 3vh auto 0;
   text-align: center;
-  padding: 24px 8px;
+  padding: 12px 8px;
   animation: rise var(--dur-slow) var(--ease) both;
 }
 
@@ -164,6 +164,8 @@
   font-weight: 750;
   color: var(--text-strong);
   letter-spacing: -0.01em;
+  margin-bottom: 0.75rem;
+  max-width: 600px;
 }
 
 .hero__subtitle {
@@ -171,10 +173,11 @@
   max-width: 34rem;
   color: var(--text-muted);
   font-size: 1.02rem;
+  margin-bottom: 0.5rem;
 }
 
 .hero__starters {
-  margin-top: 30px;
+  margin-top: 20px;
 }
 
 .hero__starters-label {
@@ -587,6 +590,238 @@
   margin-bottom: 0;
 }
 
+/* ---------- Clinician summary ---------- */
+
+.clinician-summary {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface-soft);
+  margin-top: 4px;
+}
+
+.clinician-summary__summary {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 10px 14px;
+  cursor: pointer;
+  user-select: none;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  background: var(--surface-soft);
+  border-radius: var(--radius-md);
+  transition: background var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease);
+}
+
+.clinician-summary[open] .clinician-summary__summary {
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.clinician-summary__summary:hover {
+  background: var(--surface);
+  color: var(--text-strong);
+}
+
+.clinician-summary__icon {
+  display: inline-flex;
+  align-items: center;
+  color: var(--accent-strong);
+  flex: 0 0 auto;
+}
+
+.clinician-summary__title {
+  font-weight: 650;
+  color: var(--text-strong);
+  flex: 1 1 auto;
+}
+
+.clinician-summary__badge {
+  display: inline-block;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  padding: 2px 7px;
+  border-radius: var(--radius-pill);
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+  border: 1px solid var(--accent-ring);
+}
+
+.clinician-summary__content {
+  padding: 14px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  background: var(--surface);
+  border-bottom-left-radius: var(--radius-md);
+  border-bottom-right-radius: var(--radius-md);
+}
+
+.clinician-summary__section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.clinician-summary__section--alert {
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  background: var(--tri-emergency-soft);
+  border: 1px solid rgba(180, 35, 24, 0.2);
+}
+
+.clinician-summary__section--alert .clinician-summary__section-title {
+  color: var(--tri-emergency);
+}
+
+.clinician-summary__section-title {
+  margin: 0;
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.clinician-summary__text {
+  margin: 0;
+  font-size: 0.94rem;
+  color: var(--text-strong);
+  line-height: 1.5;
+}
+
+.clinician-summary__triage-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: var(--radius-sm);
+  font-size: 0.86rem;
+  font-weight: 700;
+  width: fit-content;
+}
+
+.clinician-summary__triage-badge--emergency {
+  background: var(--tri-emergency-soft);
+  color: var(--tri-emergency);
+}
+
+.clinician-summary__triage-badge--urgent_same_day {
+  background: var(--tri-urgent-soft);
+  color: var(--tri-urgent);
+}
+
+.clinician-summary__triage-badge--routine {
+  background: var(--tri-routine-soft);
+  color: var(--tri-routine);
+}
+
+.clinician-summary__triage-badge--self_care {
+  background: var(--tri-selfcare-soft);
+  color: var(--tri-selfcare);
+}
+
+.clinician-summary__triage-badge--needs_more_info {
+  background: var(--tri-info-soft);
+  color: var(--tri-info);
+}
+
+.clinician-summary__symptom-list,
+.clinician-summary__signal-list,
+.clinician-summary__rule-list,
+.clinician-summary__timeline-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.clinician-summary__timeline-list {
+  padding-inline-start: 1.25rem;
+  list-style: decimal;
+  gap: 6px;
+}
+
+.clinician-summary__symptom-item {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-soft);
+  border: 1px solid var(--border);
+}
+
+.clinician-summary__symptom-name {
+  font-weight: 650;
+  font-size: 0.92rem;
+  color: var(--text-strong);
+}
+
+.clinician-summary__symptom-details,
+.clinician-summary__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.clinician-summary__tag {
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  padding: 2px 7px;
+  border-radius: var(--radius-pill);
+}
+
+.clinician-summary__signal-item {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--tri-emergency);
+}
+
+.clinician-summary__rule-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 9px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-soft);
+  border: 1px solid var(--border);
+  font-size: 0.88rem;
+}
+
+.clinician-summary__rule-desc {
+  color: var(--text);
+  line-height: 1.4;
+}
+
+.clinician-summary__rule-level {
+  flex: 0 0 auto;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  background: var(--tri-info-soft);
+  color: var(--tri-info);
+}
+
+.clinician-summary__timeline-item {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  line-height: 1.45;
+}
+
 /* ---------- Composer / dock ---------- */
 
 .dock {
@@ -830,5 +1065,161 @@
 
   .ghost-button {
     padding: 9px;
+  }
+}
+
+/* Voice Input Styles */
+.composer__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.composer__mic {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.composer__mic:hover:not(:disabled) {
+  background: var(--surface-hover);
+  color: var(--text-primary);
+}
+
+.composer__mic:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.composer__mic--active {
+  color: var(--danger);
+  animation: pulse-mic 2s infinite;
+}
+
+.composer__mic--unsupported {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.composer__field--listening {
+  border-color: var(--danger);
+  box-shadow: 0 0 0 1px var(--danger);
+}
+
+@keyframes pulse-mic {
+  0% {
+    box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.4);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(220, 38, 38, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(220, 38, 38, 0);
+  }
+}
+
+/* Clinician Handoff Actions */
+.clinician-summary__handoff-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  margin-bottom: 12px;
+}
+
+.clinician-summary__action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--surface-soft);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 6px 12px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  transition: all var(--dur-fast) var(--ease);
+}
+
+.clinician-summary__action-btn:hover {
+  background: var(--surface);
+  color: var(--text-strong);
+  border-color: var(--border-strong);
+}
+
+/* Print Only Section */
+.only-print {
+  display: none;
+}
+
+/* Print Styles */
+@media print {
+  /* Hide unrelated UI */
+  body * {
+    visibility: hidden;
+  }
+  
+  /* Ensure the clinician summary details is expanded and visible */
+  .clinician-summary--printable,
+  .clinician-summary--printable * {
+    visibility: visible;
+  }
+  
+  .clinician-summary--printable {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    border: none;
+    background: transparent;
+    box-shadow: none;
+  }
+  
+  .no-print {
+    display: none !important;
+  }
+
+  .only-print {
+    display: block;
+  }
+
+  .clinician-summary__summary {
+    display: none !important;
+  }
+  
+  .clinician-summary__print-header {
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #000;
+  }
+
+  .clinician-summary__print-header h2 {
+    margin: 0 0 10px 0;
+    font-size: 1.5rem;
+  }
+  
+  .clinician-summary__print-header p {
+    margin: 4px 0;
+    font-size: 0.9rem;
+  }
+  
+  .clinician-summary__print-footer {
+    margin-top: 30px;
+    padding-top: 15px;
+    border-top: 1px solid #ccc;
+    font-size: 0.85rem;
+    font-style: italic;
+  }
+
+  /* Expand all details for print */
+  details {
+    display: block;
   }
 }
